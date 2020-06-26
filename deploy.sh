@@ -36,7 +36,7 @@ WARN="${Yellow}[警告]${Font}"
 Error="${Red}[错误]${Font}"
 
 # 版本
-shell_version="0.55"
+shell_version="0.59"
 install_mode="None"
 github_branch="master"
 version_cmp="/tmp/version_cmp.tmp"
@@ -296,12 +296,25 @@ trojan_reset() {
 EOF
     port_exist_check $tjport
     if [[ -f ${tsp_conf} ]]; then
-        sed -i "/#Trojan-GO_Port/c \\      args: 127.0.0.1:${tjport} #Trojan-GO_Port" ${tsp_conf}
+        sed -i "/#Trojan-GO_Port/c \\\t args: 127.0.0.1:${tjport} #Trojan-GO_Port" ${tsp_conf}
         judge "同步 Trojan-Go 配置设置"
         systemctl restart tls-shunt-proxy
         judge "TLS-Shunt-Proxy 应用设置"
         sleep 5
         service_status_check tls-shunt-proxy
+    else
+        echo -e "${Error} ${RedBG} TLS-Shunt-Proxy 配置异常，请重新安装 ${Font}"
+        exit 4
+    fi
+}
+
+tsp_sync() {
+    if [[ -f ${tsp_conf} ]]; then
+        [ -f ${trojan_conf} ] && tjport="$(grep '"local_port"' ${trojan_conf} | awk -F ':' '{print $2}')" && sed -i "/#Trojan-GO_Port/c \\\t args: 127.0.0.1:${tjport} #Trojan-GO_Port" ${tsp_conf}
+        [ -f ${v2ray_conf} ] && v2port="$(grep '"port":' ${v2ray_conf} | sed -r 's/.*:(.*),.*/\1/')" && sed -i "/#V2Ray_Port/c \\\t    args: 127.0.0.1:${v2port} #V2Ray_Port" ${tsp_conf}
+        [ -f ${v2ray_conf} ] && camouflage="$(grep '"path":' ${v2ray_conf} | awk -F '"' '{print $4}')" && sed -i "/#V2Ray_WSPATH/c \\\t  - path: ${camouflage} #V2Ray_WSPATH" ${tsp_conf}
+        systemctl restart tls-shunt-proxy
+        judge "TLS-Shunt-Proxy 同步配置 "
     else
         echo -e "${Error} ${RedBG} TLS-Shunt-Proxy 配置异常，请重新安装 ${Font}"
         exit 4
@@ -396,8 +409,8 @@ v2ray_reset() {
 EOF
     port_exist_check $v2port
     if [[ -f ${tsp_conf} ]]; then
-        sed -i "/#V2Ray_Port/c \\          args: 127.0.0.1:${v2port} #V2Ray_Port" ${tsp_conf}
-        sed -i "/#V2Ray_WSPATH/c \\        - path: ${camouflage} #V2Ray_WSPATH" ${tsp_conf}
+        sed -i "/#V2Ray_Port/c \\\t    args: 127.0.0.1:${v2port} #V2Ray_Port" ${tsp_conf}
+        sed -i "/#V2Ray_WSPATH/c \\\t  - path: ${camouflage} #V2Ray_WSPATH" ${tsp_conf}
         judge "同步 V2Ray WS 配置设置"
         systemctl restart tls-shunt-proxy
         judge "TLS-Shunt-Proxy 应用设置"
@@ -594,6 +607,9 @@ list() {
     boost)
         bbr_boost_sh
         ;;
+    sync)
+        tsp_sync
+        ;;
     *)
         menu
         ;;
@@ -611,9 +627,9 @@ menu() {
     echo -e "${Green}3.${Font}  添加 WatchTower（容器自动更新）"
     echo -e "${Green}4.${Font}  添加 Portainer（容器管理）"
     echo -e "${Green}5.${Font}  添加 Nginx（Web网站）"
-    echo -e "————————————————————配置重置————————————————————"
-    echo -e "${Green}6.${Font}  重置 Troan-Go 配置"
-    echo -e "${Green}7.${Font}  重置 V2Ray WS 配置"
+    echo -e "————————————————————配置修改————————————————————"
+    echo -e "${Green}6.${Font}  修改 Troan-Go 配置"
+    echo -e "${Green}7.${Font}  修改 V2Ray WS 配置"
     echo -e "${Green}8.${Font}  修改 TLS端口 / 域名"
     echo -e "————————————————————查看信息————————————————————"
     echo -e "${Green}9.${Font}  查看 Trojan-Go / V2Ray 配置信息"
@@ -642,13 +658,14 @@ menu() {
         install_nginx
         ;;
     6)
-        modify_trojan
+        trojan_reset
         ;;
     7)
-        modify_v2ray
+        v2ray_reset
         ;;
     8)
-        modify_tsp
+        domain_port_check
+        tsp_sync
         ;;
     9)
         cat ${trojan_conf}
