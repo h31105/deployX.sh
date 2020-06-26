@@ -26,7 +26,8 @@ cd "$(
 Green="\033[32m"
 Red="\033[31m"
 Yellow="\033[33m"
-GreenBG="\033[42;37m"
+#GreenBG="\033[42;37m"
+GreenBG="\033[42;36m"
 RedBG="\033[41;37m"
 Font="\033[0m"
 
@@ -325,7 +326,7 @@ v2ray_reset() {
     judge "V2ray WSPATH 设置"
     echo -e "${OK} ${GreenBG} WSPATH: ${camouflage} ${Font}"
     mkdir -p $v2ray_conf_dir
-    cat >/v2ray_conf_dir/config.json <<-EOF
+    cat >$v2ray_conf_dir/config.json <<-EOF
 {
     "log": {
         "access": "/var/log/v2ray/access.log",
