@@ -11,8 +11,7 @@ cd "$(
 # System Request:Debian 9+/Ubuntu 18.04+/Centos 7+
 # Author: Miroku/h31105
 # Dscription: TLS-Shunt-Proxy&Trojan-Go Script
-# Version: 0.5
-#	Official document:
+# Official document:
 # https://www.v2ray.com/
 # https://github.com/p4gefau1t/trojan-go
 # https://github.com/liberal-boy/tls-shunt-proxy
@@ -26,8 +25,7 @@ cd "$(
 Green="\033[32m"
 Red="\033[31m"
 Yellow="\033[33m"
-#GreenBG="\033[42;37m"
-GreenBG="\033[42;36m"
+GreenBG="\033[30;37m"
 RedBG="\033[41;37m"
 Font="\033[0m"
 
@@ -38,7 +36,7 @@ WARN="${Yellow}[警告]${Font}"
 Error="${Red}[错误]${Font}"
 
 # 版本
-shell_version="0.52"
+shell_version="0.55"
 install_mode="None"
 github_branch="master"
 version_cmp="/tmp/version_cmp.tmp"
@@ -252,7 +250,7 @@ service_status_check() {
         systemctl restart $1
         judge "尝试启动 $1 "
         sleep 5
-        echo -e "${WARN} ${Yellow} 请重新执行脚本 ${Font}"
+        echo -e "${WARN} ${Yellow} 请尝试重新安装修复后再试 ${Font}"
         exit 4
     fi
 }
@@ -398,7 +396,7 @@ v2ray_reset() {
 EOF
     port_exist_check $v2port
     if [[ -f ${tsp_conf} ]]; then
-        sed -i "/#V2Ray_Port/c \\          args: 127.0.0.1:${port} #V2Ray_Port" ${tsp_conf}
+        sed -i "/#V2Ray_Port/c \\          args: 127.0.0.1:${v2port} #V2Ray_Port" ${tsp_conf}
         sed -i "/#V2Ray_WSPATH/c \\        - path: ${camouflage} #V2Ray_WSPATH" ${tsp_conf}
         judge "同步 V2Ray WS 配置设置"
         systemctl restart tls-shunt-proxy
@@ -479,27 +477,36 @@ EOF
 
 install_trojan() {
     trojan_reset
+    docker stop Trojan-Go
+    docker rm Trojan-Go
     docker run -d --network host --name Trojan-Go --restart=always -v /etc/trojan-go:/etc/trojan-go teddysun/trojan-go
 }
 
 install_v2ray() {
     v2ray_reset
+    docker stop V2Ray
+    docker rm V2Ray
     docker run -d --network host --name V2Ray --restart=always -v /etc/v2ray:/etc/v2ray teddysun/v2ray
 }
 
 install_watchtower() {
+    docker stop WatchTower
+    docker rm WatchTower
     docker run -d --name WatchTower --restart=always -v /var/run/docker.sock:/var/run/docker.sock containrrr/watchtower --cleanup
 }
 
 install_portainer() {
+    docker stop Portainer
+    docker rm Portainer
     docker volume create portainer_data
     docker run -d -p 127.0.0.1:9000:9000 --name Portainer --restart=always -v /var/run/docker.sock:/var/run/docker.sock -v portainer_data:/data portainer/portainer
 }
 
 install_nginx() {
-    mkdir /etc/nginx &&
-        mkdir -p /usr/share/nginx/html &&
-        docker run -d --network host --name Nginx --restart=always -v /etc/nginx/nginx.conf:/etc/nginx/nginx.conf -v /usr/share/nginx/html:/usr/share/nginx/html nginx
+    docker stop nginx
+    docker rm nginx
+    mkdir /etc/nginx && mkdir -p /usr/share/nginx/html
+    docker run -d --network host --name Nginx --restart=always -v /etc/nginx/nginx.conf:/etc/nginx/nginx.conf -v /usr/share/nginx/html:/usr/share/nginx/html nginx
 }
 
 install_trojan_v2ray() {
@@ -604,10 +611,10 @@ menu() {
     echo -e "${Green}3.${Font}  添加 WatchTower（容器自动更新）"
     echo -e "${Green}4.${Font}  添加 Portainer（容器管理）"
     echo -e "${Green}5.${Font}  添加 Nginx（Web网站）"
-    echo -e "————————————————————配置变更————————————————————"
-    echo -e "${Green}6.${Font}  变更 Troan-Go 密码"
-    echo -e "${Green}7.${Font}  变更 V2Ray UUID / WSPATH"
-    echo -e "${Green}8.${Font}  变更 TLS端口 / 域名"
+    echo -e "————————————————————配置重置————————————————————"
+    echo -e "${Green}6.${Font}  重置 Troan-Go 配置"
+    echo -e "${Green}7.${Font}  重置 V2Ray WS 配置"
+    echo -e "${Green}8.${Font}  修改 TLS端口 / 域名"
     echo -e "————————————————————查看信息————————————————————"
     echo -e "${Green}9.${Font}  查看 Trojan-Go / V2Ray 配置信息"
     echo -e "————————————————————杂项管理————————————————————"
