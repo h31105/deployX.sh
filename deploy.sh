@@ -8,11 +8,11 @@ cd "$(
 )" || exit
 
 #====================================================
-#	System Request:Debian 9+/Ubuntu 18.04+/Centos 7+
-#	Author:	Miroku/h31105
-#	Dscription: TLS-Shunt-Proxy&Trojan-Go Script
-#	Version: 0.5
-#	#	Official document:
+# System Request:Debian 9+/Ubuntu 18.04+/Centos 7+
+# Author: Miroku/h31105
+# Dscription: TLS-Shunt-Proxy&Trojan-Go Script
+# Version: 0.5
+#	Official document:
 # https://www.v2ray.com/
 # https://github.com/p4gefau1t/trojan-go
 # https://github.com/liberal-boy/tls-shunt-proxy
@@ -38,7 +38,7 @@ WARN="${Yellow}[警告]${Font}"
 Error="${Red}[错误]${Font}"
 
 # 版本
-shell_version="0.5"
+shell_version="0.52"
 install_mode="None"
 github_branch="master"
 version_cmp="/tmp/version_cmp.tmp"
