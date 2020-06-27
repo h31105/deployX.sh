@@ -36,7 +36,7 @@ WARN="${Yellow}[警告]${Font}"
 Error="${Red}[错误]${Font}"
 
 # 版本
-shell_version="0.75"
+shell_version="0.78"
 install_mode="None"
 github_branch="master"
 version_cmp="/tmp/version_cmp.tmp"
@@ -47,8 +47,6 @@ nginx_conf_dir="/etc/nginx"
 tsp_conf="${tsp_conf_dir}/config.yaml"
 trojan_conf="${trojan_conf_dir}/config.json"
 v2ray_conf="${v2ray_conf_dir}/config.json"
-nginx_conf="${nginx_conf_dir}/nginx.conf"
-nginx_dir="/etc/nginx"
 web_dir="/home/wwwroot"
 old_config_status="off"
 
@@ -182,9 +180,20 @@ old_config_exist_check() {
     fi
 }
 
-info_extraction() {
-    #关键字 目标文件 字符位置
-    grep "$1" "$2" | awk -F "$3" '{print $2}'
+info() {
+    echo -e "  TLS模式 客户端配置信息："
+    echo -e "————————————————————————————————————————————————"
+    [ -f ${tsp_conf} ] && echo -e "服务器端口: $(grep '#TSP_Port' ${trojan_conf} | sed -r 's/.*0:(.*)#.*/\1/')"
+    [ -f ${tsp_conf} ] && echo -e "服务器域名: $(grep '#TSP_Domain' ${trojan_conf} | sed -r 's/.*:(.*)#.*/\1/')"
+    echo -e "————————————————————————————————————————————————"
+    [ -f ${trojan_conf} ] && echo -e "Trojan-Go 密码: $(grep '"password"' ${trojan_conf} | awk -F '"' '{print $4}')"
+    [ -f ${trojan_conf} ] && echo -e "————————————————————————————————————————————————"
+    [ -f ${v2ray_conf} ] && echo -e "V2Ray UUID: $(grep '"id":' ${v2ray_conf} | awk -F '"' '{print $4}')"
+    [ -f ${v2ray_conf} ] && echo -e "V2Ray AlterID: $(grep '"alterId":' ${v2ray_conf} | sed -r 's/.*:(.*),.*/\1/')"
+    [ -f ${v2ray_conf} ] && echo -e "V2Ray 加密方式: AUTO"
+    [ -f ${v2ray_conf} ] && echo -e "V2Ray 伪装 HOST: $(grep '#TSP_Domain' ${trojan_conf} | sed -r 's/.*:(.*)#.*/\1/')"
+    [ -f ${v2ray_conf} ] && echo -e "V2Ray WS PATH: $(grep '"path":' ${v2ray_conf} | awk -F '"' '{print $4}')"
+    [ -f ${v2ray_conf} ] && echo -e "————————————————————————————————————————————————"
 }
 
 domain_port_check() {
@@ -354,7 +363,7 @@ v2ray_reset() {
          "clients": [
             {
               "id": "${UUID}", 
-             "alterId": ${alterID}
+             "alterId":${alterID}
             }
           ]
         }, 
@@ -481,7 +490,9 @@ EOF
     systemctl enable tls-shunt-proxy && systemctl restart tls-shunt-proxy
     judge "TLS-Shunt-Proxy 启动 "
 }
-
+update_docker_tsp(){
+    maintain
+}
 install_trojan() {
     trojan_reset
     docker stop Trojan-Go
@@ -507,13 +518,6 @@ install_portainer() {
     docker rm Portainer
     docker volume create portainer_data
     docker run -d -p 80:9000 --name Portainer --restart=always -v /var/run/docker.sock:/var/run/docker.sock -v portainer_data:/data portainer/portainer
-}
-
-install_nginx() {
-    docker stop nginx
-    docker rm nginx
-    mkdir /etc/nginx && mkdir -p /usr/share/nginx/html
-    docker run -d --network host --name Nginx --restart=always -v /etc/nginx/nginx.conf:/etc/nginx/nginx.conf -v /usr/share/nginx/html:/usr/share/nginx/html nginx
 }
 
 install_trojan_v2ray() {
@@ -565,6 +569,10 @@ bbr_boost_sh() {
     wget -N --no-check-certificate "https://raw.githubusercontent.com/ylx2016/Linux-NetSpeed/master/tcp.sh" && chmod +x tcp.sh && ./tcp.sh
 }
 
+uninstall_all(){
+    maintain
+}
+
 update_sh() {
     ol_version=$(curl -L -s https://raw.githubusercontent.com/h31105/trojan_v2_docker_onekey/${github_branch}/deploy.sh | grep "shell_version=" | head -1 | awk -F '=|"' '{print $3}')
     echo "$ol_version" >$version_cmp
@@ -588,7 +596,7 @@ update_sh() {
 }
 
 maintain() {
-    echo -e "${RedBG}该选项暂时无法使用（缺少依赖条件）${Font}"
+    echo -e "${RedBG}该选项暂时无法使用 ${Font}"
     echo -e "${RedBG}$1${Font}"
     exit 0
 }
@@ -612,7 +620,7 @@ list() {
 
 menu() {
     clear
-    echo -e " TSP / NGINX / TROJAN-GO / V2RAY 容器化部署脚本 \n"
+    echo -e " TSP / TROJAN-GO / V2RAY 容器化部署脚本 \n"
     echo -e "当前版本:${shell_version}\n"
 
     echo -e "————————————————————部署管理————————————————————"
@@ -620,17 +628,16 @@ menu() {
     echo -e "${Green}2.${Font}  安装 Trojan-Go / V2Ray WS "
     echo -e "${Green}3.${Font}  添加 WatchTower（容器自动更新）"
     echo -e "${Green}4.${Font}  添加 Portainer（容器管理）"
-    echo -e "${Green}5.${Font}  添加 Nginx（Web网站）"
     echo -e "————————————————————配置修改————————————————————"
-    echo -e "${Green}6.${Font}  修改 Troan-Go 配置"
-    echo -e "${Green}7.${Font}  修改 V2Ray WS 配置"
-    echo -e "${Green}8.${Font}  修改 TLS端口 / 域名"
+    echo -e "${Green}5.${Font}  修改 Troan-Go 配置"
+    echo -e "${Green}6.${Font}  修改 V2Ray WS 配置"
+    echo -e "${Green}7.${Font}  修改 TLS端口 / 域名"
     echo -e "————————————————————查看信息————————————————————"
-    echo -e "${Green}9.${Font}  查看 Trojan-Go / V2Ray 配置信息"
+    echo -e "${Green}8.${Font}  查看 Trojan-Go / V2Ray 配置信息"
     echo -e "————————————————————杂项管理————————————————————"
-    echo -e "${Green}10.${Font} 安装 4合1 BBR 锐速脚本"
-    echo -e "${Green}11.${Font} 升级 Docker / TLS-Shunt-Proxy"
-    echo -e "${Green}12.${Font} 卸载 已安装的组件"
+    echo -e "${Green}9.${Font}  安装 4合1 BBR 锐速脚本"
+    echo -e "${Green}10.${Font} 升级 Docker / TLS-Shunt-Proxy"
+    echo -e "${Green}11.${Font} 卸载 已安装的组件"
     echo -e "${Green}0.${Font}  退出脚本 "
     echo -e "————————————————————————————————————————————————\n"
 
@@ -649,30 +656,27 @@ menu() {
         install_portainer
         ;;
     5)
-        install_nginx
-        ;;
-    6)
         trojan_reset
         ;;
-    7)
+    6)
         v2ray_reset
         ;;
-    8)
+    7)
         domain_port_check
+        sed -i "/#TSP_Port/c \\listen: 0.0.0.0:${tspport} #TSP_Port" ${tsp_conf}
+        sed -i "/#TSP_Domain/c \\  - name: ${domain} #TSP_Domain" ${tsp_conf}
         tsp_sync
         ;;
-    9)
-        cat ${trojan_conf}
-        cat ${v2ray_conf}
+    8)
+        info
         ;;
-    10)
+    9)
         bbr_boost_sh
         ;;
-    11)
-        upgrade_docker
-        upgrade_tsp
+    10)
+        upgrade_docker_tsp
         ;;
-    12)
+    11)
         uninstall_all
         ;;
     0)
