@@ -191,7 +191,7 @@ info() {
     [ -f ${v2ray_conf} ] && echo -e "V2Ray UUID: $(grep '"id":' ${v2ray_conf} | awk -F '"' '{print $4}')"
     [ -f ${v2ray_conf} ] && echo -e "V2Ray AlterID: $(grep '"alterId":' ${v2ray_conf} | awk -F ': ' '{print $2}')"
     [ -f ${v2ray_conf} ] && echo -e "V2Ray 加密方式: AUTO"
-    [ -f ${v2ray_conf} ] && echo -e "V2Ray 伪装 HOST: $(grep '#TSP_Domain' ${tsp_conf} | sed -r 's/.*:(.*)#.*/\1/')"
+    [ -f ${v2ray_conf} ] && echo -e "V2Ray 伪装 HOST: $(grep '#TSP_Domain' ${tsp_conf} | sed -r 's/.*:(.*) #.*/\1/')"
     [ -f ${v2ray_conf} ] && echo -e "V2Ray WS PATH: $(grep '"path":' ${v2ray_conf} | awk -F '"' '{print $4}')"
     [ -f ${v2ray_conf} ] && echo -e "————————————————————————————————————————————————"
     echo -e "                 服务器分流配置信息"
@@ -199,9 +199,9 @@ info() {
     [ -f ${tsp_conf} ] && echo -e "服务器端口: $(grep '#TSP_Port' ${tsp_conf} | sed -r 's/.*0:(.*)#.*/\1/')"
     [ -f ${tsp_conf} ] && echo -e "服务器域名: $(grep '#TSP_Domain' ${tsp_conf} | sed -r 's/.*: (.*)#.*/\1/')"
     [ -f ${tsp_conf} ] && echo -e "Trojan-Go 分流端口: $(grep '#Trojan-Go_Port' ${tsp_conf} | sed -r 's/.*:(.*) #.*/\1/')"
-    [ -f ${trojan_conf} ] && echo -e "$(grep '"local_port"' ${trojan_conf} | sed -r 's/.*: (.*),.*/\1/')"
+    [ -f ${trojan_conf} ] && echo -e "Trojan-Go 监听端口: $(grep '"local_port"' ${trojan_conf} | sed -r 's/.*: (.*),.*/\1/')"
     [ -f ${tsp_conf} ] && echo -e "V2Ray 分流端口: $(grep '#V2Ray_Port' ${tsp_conf} | sed -r 's/.*:(.*) #.*/\1/')"
-    [ -f ${v2ray_conf} ] && echo -e"$(grep '"port":' ${v2ray_conf} | sed -r 's/.*: (.*),.*/\1/')"
+    [ -f ${v2ray_conf} ] && echo -e "V2Ray 监听端口: $(grep '"port":' ${v2ray_conf} | sed -r 's/.*: (.*),.*/\1/')"
     echo -e "————————————————————————————————————————————————"
 }
 
@@ -451,17 +451,6 @@ web_camouflage() {
 }
 
 install_docker() {
-    ##if [[ "${ID}" == "centos" ]]; then
-    ##    ${INS} -y remove docker docker-client docker-client-latest docker-common docker-latest docker-latest-logrotate docker-logrotate docker-engine
-    ##    ${INS} -y install yum-utils
-    ##    yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
-    ##else
-    ##    ${INS} -y remove docker docker-engine docker.io containerd runc
-    ##    ${INS} -y install apt-transport-https ca-certificates curl gnupg-agent software-properties-common
-    ##    curl -fsSL https://download.docker.com/linux/debian/gpg | sudo apt-key add -
-    ##    add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/debian $(lsb_release -cs) stable" && ${INS} update
-    ##fi
-    ##${INS} -y install docker-ce docker-ce-cli containerd.io
     curl -fsSL https://get.docker.com -o get-docker.sh
     sh get-docker.sh
     judge "安装 Docker "
@@ -534,8 +523,8 @@ install_trojan_v2ray() {
     check_system
     install_docker
     prereqcheck
-    read -rp "请选择安装 Trojan-Go(T) / V2Ray WS(V) 或 共用分流(回车)，(T/V/回车):" install_mode
-    [[ -z ${install_mode} ]] && install_mode="Both"
+    read -rp "请选择安装 Trojan-Go(T) / V2Ray WS(V) 或 共用分流(A)，(T/V/A):" install_mode
+    [[ -z ${install_mode} ]] && install_mode="None"
     case $install_mode in
     [tT]rojan | [tT])
         echo -e "${GreenBG} 开始安装 Trojan-Go ${Font}"
@@ -549,14 +538,14 @@ install_trojan_v2ray() {
         sleep 3
         install_v2ray
         ;;
-    Both)
+    [aA]ll | [aA])
         echo -e "${GreenBG} 开始安装 Trojan-Go & V2Ray WS ${Font}"
         sleep 3
         install_trojan
         install_v2ray
         ;;
     *)
-        echo -e "${RedBG} 请输入正确的字母(T/V/回车) ${Font}"
+        echo -e "${RedBG} 请输入正确的字母(T/V/A) ${Font}"
         ;;
     esac
 }
@@ -579,7 +568,45 @@ bbr_boost_sh() {
 }
 
 uninstall_all() {
-    maintain
+    read -rp "${RedBG} 此操作将删除 TLS-Shunt-Proxy、Docker 平台 和 此脚本所安装的容器数据，请在确认后，输入 YES（区分大小写）:" uninstall
+    [[ -z ${uninstall} ]] && uninstall="No"
+    case $uninstall in
+    YES)
+        echo -e "${GreenBG} 开始卸载 ${Font}"
+        sleep 2
+        ;;
+    *)
+        echo -e "${RedBG} 我再想想 ${Font}"
+        exit 2
+        ;;
+    esac
+    
+    is_root
+    check_system
+    systemctl start docker
+    docker stop Trojan-Go && docker rm Trojan-Go
+    docker stop V2Ray && docker rm V2Ray
+    docker stop WatchTower && docker rm WatchTower
+    docker stop Portainer && docker rm Portainer
+    systemctl stop docker && systemctl disable docker
+    if [[ "${ID}" == "centos" ]]; then
+        ${INS} -y remove docker docker-client docker-client-latest docker-common docker-latest docker-latest-logrotate docker-logrotate docker-engine
+    ##    ${INS} -y install yum-utils
+    ##    yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
+    else
+        ${INS} -y remove docker docker-engine docker.io containerd runc
+    ##    ${INS} -y install apt-transport-https ca-certificates curl gnupg-agent software-properties-common
+    ##    curl -fsSL https://download.docker.com/linux/debian/gpg | sudo apt-key add -
+    ##    add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/debian $(lsb_release -cs) stable" && ${INS} update
+    fi
+    ##${INS} -y install docker-ce docker-ce-cli containerd.io
+    rm -rf /var/lib/docker #Removes all data
+    rm -rf /etc/systemd/system/docker.service
+    systemctl stop tls-shunt-proxy && systemctl disable tls-shunt-proxy
+    rm -rf /etc/systemd/system/tls-shunt-proxy.service
+    rm -rf /usr/local/bin/tls-shunt-proxy
+    rm -rf /etc/tls-shunt-proxy /etc/trojan-go /etc/v2ray
+    echo -e "${GreenBG}  Done! ${Font}"
 }
 
 update_sh() {
