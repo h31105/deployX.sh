@@ -36,7 +36,7 @@ WARN="${Yellow}[警告]${Font}"
 Error="${Red}[错误]${Font}"
 
 # 版本
-shell_version="0.88"
+shell_version="0.89"
 install_mode="None"
 github_branch="master"
 version_cmp="/tmp/version_cmp.tmp"
