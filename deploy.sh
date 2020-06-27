@@ -36,7 +36,7 @@ WARN="${Yellow}[警告]${Font}"
 Error="${Red}[错误]${Font}"
 
 # 版本
-shell_version="0.59"
+shell_version="0.75"
 install_mode="None"
 github_branch="master"
 version_cmp="/tmp/version_cmp.tmp"
@@ -282,11 +282,11 @@ trojan_reset() {
     "run_type": "server",
     "disable_http_check": true,
     "local_addr": "127.0.0.1",
-    "local_port": ${tjport},
+    "local_port":${tjport},
     "remote_addr": "1.1.1.1",
-    "remote_port": 80,
+    "remote_port":80,
     "fallback_addr": "1.1.1.1",
-    "fallback_port": 443,
+    "fallback_port":443,
     "password": ["${tjpasswd}"],
     "transport_plugin": {
         "enabled": true,
@@ -296,7 +296,7 @@ trojan_reset() {
 EOF
     port_exist_check $tjport
     if [[ -f ${tsp_conf} ]]; then
-        sed -i "/#Trojan-GO_Port/c \\\t args: 127.0.0.1:${tjport} #Trojan-GO_Port" ${tsp_conf}
+        sed -i "/#Trojan-GO_Port/c \\      args: 127.0.0.1:${tjport} #Trojan-GO_Port" ${tsp_conf}
         judge "同步 Trojan-Go 配置设置"
         systemctl restart tls-shunt-proxy
         judge "TLS-Shunt-Proxy 应用设置"
@@ -310,9 +310,9 @@ EOF
 
 tsp_sync() {
     if [[ -f ${tsp_conf} ]]; then
-        [ -f ${trojan_conf} ] && tjport="$(grep '"local_port"' ${trojan_conf} | awk -F ':' '{print $2}')" && sed -i "/#Trojan-GO_Port/c \\\t args: 127.0.0.1:${tjport} #Trojan-GO_Port" ${tsp_conf}
-        [ -f ${v2ray_conf} ] && v2port="$(grep '"port":' ${v2ray_conf} | sed -r 's/.*:(.*),.*/\1/')" && sed -i "/#V2Ray_Port/c \\\t    args: 127.0.0.1:${v2port} #V2Ray_Port" ${tsp_conf}
-        [ -f ${v2ray_conf} ] && camouflage="$(grep '"path":' ${v2ray_conf} | awk -F '"' '{print $4}')" && sed -i "/#V2Ray_WSPATH/c \\\t  - path: ${camouflage} #V2Ray_WSPATH" ${tsp_conf}
+        [ -f ${trojan_conf} ] && tjport="$(grep '"local_port"' ${trojan_conf} | sed -r 's/.*:(.*),.*/\1/')" && sed -i "/#Trojan-GO_Port/c \\      args: 127.0.0.1:${tjport} #Trojan-GO_Port" ${tsp_conf}
+        [ -f ${v2ray_conf} ] && v2port="$(grep '"port":' ${v2ray_conf} | sed -r 's/.*:(.*),.*/\1/')" && sed -i "/#V2Ray_Port/c \\        args: 127.0.0.1:${v2port} #V2Ray_Port" ${tsp_conf}
+        [ -f ${v2ray_conf} ] && camouflage="$(grep '"path":' ${v2ray_conf} | awk -F '"' '{print $4}')" && sed -i "/#V2Ray_WSPATH/c \\      - path: ${camouflage} #V2Ray_WSPATH" ${tsp_conf}
         systemctl restart tls-shunt-proxy
         judge "TLS-Shunt-Proxy 同步配置 "
     else
@@ -346,7 +346,7 @@ v2ray_reset() {
     },
     "inbounds": [
       {
-        "port": ${v2port}, 
+        "port":${v2port}, 
         "listen": "127.0.0.1", 
         "tag": "vmess-in", 
         "protocol": "vmess", 
@@ -409,8 +409,8 @@ v2ray_reset() {
 EOF
     port_exist_check $v2port
     if [[ -f ${tsp_conf} ]]; then
-        sed -i "/#V2Ray_Port/c \\\t    args: 127.0.0.1:${v2port} #V2Ray_Port" ${tsp_conf}
-        sed -i "/#V2Ray_WSPATH/c \\\t  - path: ${camouflage} #V2Ray_WSPATH" ${tsp_conf}
+        sed -i "/#V2Ray_Port/c \\        args: 127.0.0.1:${v2port} #V2Ray_Port" ${tsp_conf}
+        sed -i "/#V2Ray_WSPATH/c \\      - path: ${camouflage} #V2Ray_WSPATH" ${tsp_conf}
         judge "同步 V2Ray WS 配置设置"
         systemctl restart tls-shunt-proxy
         judge "TLS-Shunt-Proxy 应用设置"
@@ -460,27 +460,21 @@ listen: 0.0.0.0:${tspport} #TSP_Port
 inboundbuffersize: 4
 outboundbuffersize: 32
 vhosts:
-    - name: ${domain} #TSP_Domain
-      tlsoffloading: true
-      managedcert: true
-      alpn: http/1.1
-      protocols: tls12,tls13
-      http:
-        paths:
-          - path: ${camouflage} #V2Ray_WSPATH
-            handler: proxyPass
-            args: 127.0.0.1:36280 #V2Ray_Port
-          - path: /portainer/ #Portainer_PATH
-            handler: proxyPass
-            args: 127.0.0.1:9000 #Portainer_Port
-          - path: /portainer/api/websocket/ #Portainer_API_PATH
-            handler: proxyPass
-            args: 127.0.0.1:9000 #Portainer_API_Port
-        handler: fileServer
-        args: ${web_dir} #伪装站
-      default:
+  - name: ${domain} #TSP_Domain
+    tlsoffloading: true
+    managedcert: true
+    alpn: http/1.1
+    protocols: tls12,tls13
+    http:
+      paths:
+      - path: ${camouflage} #V2Ray_WSPATH
         handler: proxyPass
-        args: 127.0.0.1:26666 #Trojan-GO_Port
+        args: 127.0.0.1:36280 #V2Ray_Port
+      handler: fileServer
+      args: ${web_dir}/LodeRunner_TotalRecall #伪装站
+    default:
+      handler: proxyPass
+      args: 127.0.0.1:26666 #Trojan-GO_Port
 EOF
     judge "安装 TLS-Shunt-Proxy"
     systemctl daemon-reload
@@ -512,7 +506,7 @@ install_portainer() {
     docker stop Portainer
     docker rm Portainer
     docker volume create portainer_data
-    docker run -d -p 127.0.0.1:9000:9000 --name Portainer --restart=always -v /var/run/docker.sock:/var/run/docker.sock -v portainer_data:/data portainer/portainer
+    docker run -d -p 80:9000 --name Portainer --restart=always -v /var/run/docker.sock:/var/run/docker.sock -v portainer_data:/data portainer/portainer
 }
 
 install_nginx() {
