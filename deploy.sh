@@ -36,7 +36,7 @@ WARN="${Yellow}[警告]${Font}"
 Error="${Red}[错误]${Font}"
 
 # 版本
-shell_version="0.90"
+shell_version="0.91"
 install_mode="None"
 github_branch="master"
 version_cmp="/tmp/version_cmp.tmp"
@@ -691,31 +691,32 @@ menu() {
     case "$menu_num" in
     1)
         install_tls_shunt_proxy
+        info
         ;;
     2)
         install_trojan_v2ray
+        info
         ;;
     3)
         install_watchtower
         ;;
     4)
         install_portainer
-        ;;
+	;;
     5)
         trojan_reset
         docker restart Trojan-Go
         judge "Trojan-Go 应用新配置"
         info
-        sleep 2
+	read WaitPressAnyKey
         exit 0
-        
         ;;
     6)
         v2ray_reset
         docker restart V2Ray
         judge "V2Ray 应用新配置"
         info
-        sleep 2
+	read WaitPressAnyKey
         exit 0
         ;;
     7)
@@ -723,6 +724,9 @@ menu() {
         sed -i "/#TSP_Port/c \\listen: 0.0.0.0:${tspport} #TSP_Port" ${tsp_conf}
         sed -i "/#TSP_Domain/c \\  - name: ${domain} #TSP_Domain" ${tsp_conf}
         tsp_sync
+        info
+	read WaitPressAnyKey
+        exit 0
         ;;
     8)
         info
@@ -743,7 +747,6 @@ menu() {
         echo -e "${RedBG}请输入正确的数字${Font}"
         ;;
     esac
-    read WaitPressAnyKey
     menu
 }
 
