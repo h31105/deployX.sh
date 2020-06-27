@@ -190,7 +190,7 @@ info() {
     [ -f ${v2ray_conf} ] && echo -e "V2Ray UUID: $(grep '"id":' ${v2ray_conf} | awk -F '"' '{print $4}')"
     [ -f ${v2ray_conf} ] && echo -e "V2Ray AlterID: $(grep '"alterId":' ${v2ray_conf} | awk -F ': ' '{print $2}')"
     [ -f ${v2ray_conf} ] && echo -e "V2Ray 加密方式: AUTO"
-    [ -f ${v2ray_conf} ] && echo -e "V2Ray 伪装 HOST: $(grep '#TSP_Domain' ${tsp_conf} | sed -r 's/.*:(.*) #.*/\1/')"
+    [ -f ${v2ray_conf} ] && echo -e "V2Ray 伪装 HOST: $(grep '#TSP_Domain' ${tsp_conf} | sed -r 's/.*: (.*) #.*/\1/')"
     [ -f ${v2ray_conf} ] && echo -e "V2Ray WS PATH: $(grep '"path":' ${v2ray_conf} | awk -F '"' '{print $4}')"
     [ -f ${v2ray_conf} ] && echo -e "————————————————————————————————————————————————"
     echo -e "                 服务器分流配置信息"
