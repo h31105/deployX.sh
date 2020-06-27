@@ -36,7 +36,7 @@ WARN="${Yellow}[警告]${Font}"
 Error="${Red}[错误]${Font}"
 
 # 版本
-shell_version="0.91"
+shell_version="0.92"
 install_mode="None"
 github_branch="master"
 version_cmp="/tmp/version_cmp.tmp"
@@ -202,6 +202,7 @@ info() {
     [ -f ${tsp_conf} ] && echo -e "V2Ray 分流端口: $(grep '#V2Ray_Port' ${tsp_conf} | sed -r 's/.*:(.*) #.*/\1/')"
     [ -f ${v2ray_conf} ] && echo -e "V2Ray 监听端口: $(grep '"port":' ${v2ray_conf} | sed -r 's/.*: (.*),.*/\1/')"
     echo -e "————————————————————————————————————————————————"
+    read WaitPressAnyKey
 }
 
 domain_port_check() {
@@ -708,7 +709,6 @@ menu() {
         docker restart Trojan-Go
         judge "Trojan-Go 应用新配置"
         info
-	read WaitPressAnyKey
         exit 0
         ;;
     6)
@@ -716,7 +716,6 @@ menu() {
         docker restart V2Ray
         judge "V2Ray 应用新配置"
         info
-	read WaitPressAnyKey
         exit 0
         ;;
     7)
@@ -725,7 +724,6 @@ menu() {
         sed -i "/#TSP_Domain/c \\  - name: ${domain} #TSP_Domain" ${tsp_conf}
         tsp_sync
         info
-	read WaitPressAnyKey
         exit 0
         ;;
     8)
