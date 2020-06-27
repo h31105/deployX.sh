@@ -288,11 +288,9 @@ trojan_reset() {
     rm -rf ${trojan_conf} && old_config_status="off"
     read -rp "请输入密码(Trojan-Go)，默认随机 :" tjpasswd
     [[ -z ${tjpasswd} ]] && tjpasswd=$(head -n 10 /dev/urandom | md5sum | head -c ${random_num})
-    judge "Trojan-Go 密码设置"
     echo -e "${OK} ${GreenBG} Trojan-Go 密码: ${tjpasswd} ${Font}"
     read -rp "请输入监听端口(Trojan-Go)，默认随机 :" tjport
     [[ -z ${tjport} ]] && tjport=$((RANDOM % 6666 + 10000))
-    judge "Trojan-Go 监听端口设置"
     echo -e "${OK} ${GreenBG} Trojan-Go 监听端口为: $tjport ${Font}"
     mkdir -p $trojan_conf_dir
     cat >/etc/trojan-go/config.json <<-EOF
@@ -312,6 +310,7 @@ trojan_reset() {
     }
 }
 EOF
+    judge "Trojan-Go 配置生成"
     port_exist_check $tjport
     if [[ -f ${tsp_conf} ]]; then
         sed -i "/#Trojan-Go_Port/c \\      args: 127.0.0.1:${tjport} #Trojan-Go_Port" ${tsp_conf}
@@ -344,15 +343,11 @@ v2ray_reset() {
     rm -rf ${v2ray_conf} && old_config_status="off"
     read -rp "请输入监听端口(V2Ray WS)，默认随机 :" v2port
     [[ -z ${v2port} ]] && v2port=$((RANDOM % 6666 + 20000))
-    judge "V2Ray 监听端口设置"
     echo -e "${OK} ${GreenBG} V2Ray监听端口为 $v2port ${Font}"
     read -rp "请输入alterID（默认:10 仅允许填数字）:" alterID
     [[ -z ${alterID} ]] && alterID="10"
-    judge "V2Ray alterID 设置"
     [ -z "$UUID" ] && UUID=$(cat /proc/sys/kernel/random/uuid)
-    judge "V2ray UUID 设置"
     echo -e "${OK} ${GreenBG} UUID:${UUID} ${Font}"
-    judge "V2ray WSPATH 设置"
     echo -e "${OK} ${GreenBG} WSPATH: ${camouflage} ${Font}"
     mkdir -p $v2ray_conf_dir
     cat >$v2ray_conf_dir/config.json <<-EOF
@@ -425,11 +420,12 @@ v2ray_reset() {
     }
 }
 EOF
+    judge "V2Ray 配置生成"
     port_exist_check $v2port
     if [[ -f ${tsp_conf} ]]; then
         sed -i "/#V2Ray_Port/c \\        args: 127.0.0.1:${v2port} #V2Ray_Port" ${tsp_conf}
         sed -i "/#V2Ray_WSPATH/c \\      - path: ${camouflage} #V2Ray_WSPATH" ${tsp_conf}
-        judge "同步 V2Ray WS 配置设置"
+        judge "同步 V2Ray WS 配置"
         systemctl restart tls-shunt-proxy
         judge "TLS-Shunt-Proxy 应用设置"
         sleep 5
@@ -731,6 +727,7 @@ menu() {
         echo -e "${RedBG}请输入正确的数字${Font}"
         ;;
     esac
+    read WaitPressAnyKey
     menu
 }
 
