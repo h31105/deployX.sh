@@ -36,7 +36,7 @@ WARN="${Yellow}[警告]${Font}"
 Error="${Red}[错误]${Font}"
 
 # 版本
-shell_version="0.85"
+shell_version="0.88"
 install_mode="None"
 github_branch="master"
 version_cmp="/tmp/version_cmp.tmp"
@@ -88,7 +88,7 @@ check_system() {
 
 is_root() {
     if [ 0 == $UID ]; then
-        echo -e "${OK} ${GreenBG} 当前用户是root用户，进入安装流程 ${Font}"
+        echo -e "${OK} ${GreenBG} 当前用户是root用户，继续执行 ${Font}"
         sleep 3
     else
         echo -e "${Error} ${RedBG} 当前用户不是root用户，请切换到root用户后重新执行脚本 ${Font}"
@@ -314,7 +314,7 @@ trojan_reset() {
 EOF
     port_exist_check $tjport
     if [[ -f ${tsp_conf} ]]; then
-        sed -i "/#Trojan-GO_Port/c \\      args: 127.0.0.1:${tjport} #Trojan-GO_Port" ${tsp_conf}
+        sed -i "/#Trojan-Go_Port/c \\      args: 127.0.0.1:${tjport} #Trojan-Go_Port" ${tsp_conf}
         judge "同步 Trojan-Go 配置设置"
         systemctl restart tls-shunt-proxy
         judge "TLS-Shunt-Proxy 应用设置"
@@ -328,7 +328,7 @@ EOF
 
 tsp_sync() {
     if [[ -f ${tsp_conf} ]]; then
-        [ -f ${trojan_conf} ] && tjport="$(grep '"local_port"' ${trojan_conf} | sed -r 's/.*: (.*),.*/\1/')" && sed -i "/#Trojan-GO_Port/c \\      args: 127.0.0.1:${tjport} #Trojan-GO_Port" ${tsp_conf}
+        [ -f ${trojan_conf} ] && tjport="$(grep '"local_port"' ${trojan_conf} | sed -r 's/.*: (.*),.*/\1/')" && sed -i "/#Trojan-Go_Port/c \\      args: 127.0.0.1:${tjport} #Trojan-Go_Port" ${tsp_conf}
         [ -f ${v2ray_conf} ] && v2port="$(grep '"port":' ${v2ray_conf} | sed -r 's/.*: (.*),.*/\1/')" && sed -i "/#V2Ray_Port/c \\        args: 127.0.0.1:${v2port} #V2Ray_Port" ${tsp_conf}
         [ -f ${v2ray_conf} ] && camouflage="$(grep '"path":' ${v2ray_conf} | awk -F '"' '{print $4}')" && sed -i "/#V2Ray_WSPATH/c \\      - path: ${camouflage} #V2Ray_WSPATH" ${tsp_conf}
         systemctl restart tls-shunt-proxy
@@ -481,41 +481,49 @@ vhosts:
       args: ${web_dir}/LodeRunner_TotalRecall #伪装站
     default:
       handler: proxyPass
-      args: 127.0.0.1:26666 #Trojan-GO_Port
+      args: 127.0.0.1:26666 #Trojan-Go_Port
 EOF
     judge "安装 TLS-Shunt-Proxy"
     systemctl daemon-reload
     systemctl enable tls-shunt-proxy && systemctl restart tls-shunt-proxy
     judge "TLS-Shunt-Proxy 启动 "
 }
-update_docker_tsp() {
+upgrade_docker_tsp() {
     maintain
 }
 install_trojan() {
     trojan_reset
     docker stop Trojan-Go
     docker rm Trojan-Go
+    docker pull teddysun/trojan-go
     docker run -d --network host --name Trojan-Go --restart=always -v /etc/trojan-go:/etc/trojan-go teddysun/trojan-go
+    judge "Trojan-Go 容器安装"
 }
 
 install_v2ray() {
     v2ray_reset
     docker stop V2Ray
     docker rm V2Ray
+    docker pull teddysun/V2Ray
     docker run -d --network host --name V2Ray --restart=always -v /etc/v2ray:/etc/v2ray teddysun/v2ray
+    judge "V2Ray WS 容器安装"
 }
 
 install_watchtower() {
     docker stop WatchTower
     docker rm WatchTower
+    docker pull containrrr/watchtower
     docker run -d --name WatchTower --restart=always -v /var/run/docker.sock:/var/run/docker.sock containrrr/watchtower --cleanup
+    judge "WatchTower 容器安装"
 }
 
 install_portainer() {
     docker stop Portainer
     docker rm Portainer
     docker volume create portainer_data
+    docker pull portainer/portainer
     docker run -d -p 80:9000 --name Portainer --restart=always -v /var/run/docker.sock:/var/run/docker.sock -v portainer_data:/data portainer/portainer
+    judge "Portainer 容器安装"
 }
 
 install_trojan_v2ray() {
@@ -568,7 +576,8 @@ bbr_boost_sh() {
 }
 
 uninstall_all() {
-    read -rp "${RedBG} 此操作将删除 TLS-Shunt-Proxy、Docker 平台 和 此脚本所安装的容器数据，请在确认后，输入 YES（区分大小写）:" uninstall
+    echo -e "${RedBG}!!!此操作将删除 TLS-Shunt-Proxy、Docker 平台 和 此脚本所安装的容器数据!!!${Font}" 
+    read -rp "请在确认后，输入 YES（区分大小写）:" uninstall
     [[ -z ${uninstall} ]] && uninstall="No"
     case $uninstall in
     YES)
@@ -722,6 +731,7 @@ menu() {
         echo -e "${RedBG}请输入正确的数字${Font}"
         ;;
     esac
+    menu
 }
 
 update_sh
