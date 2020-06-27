@@ -44,7 +44,7 @@ wget -N --no-check-certificate -q -O deploy.sh "https://raw.githubusercontent.co
     PS，本脚本为Trojan-Go/V2Ray单用户配置，部署后，可以自定义配置内容，但不要使用脚本菜单中的修改选项，修改选项会重置相关配置信息。
 
     配置文件位置：
-    证书文件存放在 /etc/ssl 下，由TSP自动管理。其他配置文件位置如下：
+    网站路径 /home/wwwroot/ 证书文件存放在 /etc/ssl 由TSP自动管理。其他配置文件位置如下：
     TLS-Shunt-Proxy : /etc/tls-shunt-proxy/config.yaml
     Trojan-Go ： /etc/trojan-go/config.json
     V2ray : /etc/v2ray/config.json
