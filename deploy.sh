@@ -36,7 +36,7 @@ WARN="${Yellow}[警告]${Font}"
 Error="${Red}[错误]${Font}"
 
 # 版本
-shell_version="0.89"
+shell_version="0.90"
 install_mode="None"
 github_branch="master"
 version_cmp="/tmp/version_cmp.tmp"
@@ -344,7 +344,7 @@ v2ray_reset() {
     read -rp "请输入监听端口(V2Ray WS)，默认随机 :" v2port
     [[ -z ${v2port} ]] && v2port=$((RANDOM % 6666 + 20000))
     echo -e "${OK} ${GreenBG} V2Ray监听端口为 $v2port ${Font}"
-    read -rp "请输入alterID（默认:10 仅允许填数字）:" alterID
+    read -rp "请输入 AlterID（默认:10 仅允许填数字）:" alterID
     [[ -z ${alterID} ]] && alterID="10"
     [ -z "$UUID" ] && UUID=$(cat /proc/sys/kernel/random/uuid)
     echo -e "${OK} ${GreenBG} UUID:${UUID} ${Font}"
@@ -484,9 +484,11 @@ EOF
     systemctl enable tls-shunt-proxy && systemctl restart tls-shunt-proxy
     judge "TLS-Shunt-Proxy 启动 "
 }
+
 upgrade_docker_tsp() {
     maintain
 }
+
 install_trojan() {
     trojan_reset
     docker stop Trojan-Go
@@ -506,6 +508,8 @@ install_v2ray() {
 }
 
 install_watchtower() {
+    is_root
+    prereqcheck
     docker stop WatchTower
     docker rm WatchTower
     docker pull containrrr/watchtower
@@ -514,6 +518,8 @@ install_watchtower() {
 }
 
 install_portainer() {
+    is_root
+    prereqcheck
     docker stop Portainer
     docker rm Portainer
     docker volume create portainer_data
@@ -665,8 +671,8 @@ menu() {
     echo -e "当前版本:${shell_version}\n"
 
     echo -e "————————————————————部署管理————————————————————"
-    echo -e "${Green}1.${Font}  安装 TLS-Shunt-Proxy 分流器（证书自动管理）"
-    echo -e "${Green}2.${Font}  安装 Trojan-Go / V2Ray WS "
+    echo -e "${Green}1.${Font}  安装 TLS-Shunt-Proxy（证书管理&网站伪装）"
+    echo -e "${Green}2.${Font}  安装 Trojan-Go / V2Ray WS (科学上网) "
     echo -e "${Green}3.${Font}  添加 WatchTower（容器自动更新）"
     echo -e "${Green}4.${Font}  添加 Portainer（容器管理）"
     echo -e "————————————————————配置修改————————————————————"
@@ -698,9 +704,18 @@ menu() {
         ;;
     5)
         trojan_reset
+        docker restart Trojan-Go
+        judge "Trojan-Go 应用新配置"
+        info
+        exit 0
+        
         ;;
     6)
         v2ray_reset
+        docker restart V2Ray
+        judge "V2Ray 应用新配置"
+        info
+        exit 0
         ;;
     7)
         domain_port_check
