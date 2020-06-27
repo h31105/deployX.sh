@@ -36,7 +36,7 @@ WARN="${Yellow}[警告]${Font}"
 Error="${Red}[错误]${Font}"
 
 # 版本
-shell_version="0.78"
+shell_version="0.79"
 install_mode="None"
 github_branch="master"
 version_cmp="/tmp/version_cmp.tmp"
@@ -181,19 +181,28 @@ old_config_exist_check() {
 }
 
 info() {
-    echo -e "  TLS模式 客户端配置信息："
+    echo -e "                 客户端配置信息"
     echo -e "————————————————————————————————————————————————"
-    [ -f ${tsp_conf} ] && echo -e "服务器端口: $(grep '#TSP_Port' ${trojan_conf} | sed -r 's/.*0:(.*)#.*/\1/')"
-    [ -f ${tsp_conf} ] && echo -e "服务器域名: $(grep '#TSP_Domain' ${trojan_conf} | sed -r 's/.*:(.*)#.*/\1/')"
+    [ -f ${tsp_conf} ] && echo -e "服务器端口: $(grep '#TSP_Port' ${tsp_conf} | sed -r 's/.*0:(.*)#.*/\1/')"
+    [ -f ${tsp_conf} ] && echo -e "服务器域名: $(grep '#TSP_Domain' ${tsp_conf} | sed -r 's/.*: (.*)#.*/\1/')"
     echo -e "————————————————————————————————————————————————"
     [ -f ${trojan_conf} ] && echo -e "Trojan-Go 密码: $(grep '"password"' ${trojan_conf} | awk -F '"' '{print $4}')"
     [ -f ${trojan_conf} ] && echo -e "————————————————————————————————————————————————"
     [ -f ${v2ray_conf} ] && echo -e "V2Ray UUID: $(grep '"id":' ${v2ray_conf} | awk -F '"' '{print $4}')"
-    [ -f ${v2ray_conf} ] && echo -e "V2Ray AlterID: $(grep '"alterId":' ${v2ray_conf} | sed -r 's/.*:(.*),.*/\1/')"
+    [ -f ${v2ray_conf} ] && echo -e "V2Ray AlterID: $(grep '"alterId":' ${v2ray_conf} | awk -F ': ' '{print $2}')"
     [ -f ${v2ray_conf} ] && echo -e "V2Ray 加密方式: AUTO"
-    [ -f ${v2ray_conf} ] && echo -e "V2Ray 伪装 HOST: $(grep '#TSP_Domain' ${trojan_conf} | sed -r 's/.*:(.*)#.*/\1/')"
+    [ -f ${v2ray_conf} ] && echo -e "V2Ray 伪装 HOST: $(grep '#TSP_Domain' ${tsp_conf} | sed -r 's/.*:(.*)#.*/\1/')"
     [ -f ${v2ray_conf} ] && echo -e "V2Ray WS PATH: $(grep '"path":' ${v2ray_conf} | awk -F '"' '{print $4}')"
     [ -f ${v2ray_conf} ] && echo -e "————————————————————————————————————————————————"
+    echo -e "                 服务器分流配置信息"
+    echo -e "————————————————————————————————————————————————"
+    [ -f ${tsp_conf} ] && echo -e "服务器端口: $(grep '#TSP_Port' ${tsp_conf} | sed -r 's/.*0:(.*)#.*/\1/')"
+    [ -f ${tsp_conf} ] && echo -e "服务器域名: $(grep '#TSP_Domain' ${tsp_conf} | sed -r 's/.*: (.*)#.*/\1/')"
+    [ -f ${tsp_conf} ] && echo -e "Trojan-Go 分流端口: $(grep '#Trojan-Go_Port' ${tsp_conf} | sed -r 's/.*:(.*) #.*/\1/')"
+    [ -f ${trojan_conf} ] && echo -e "$(grep '"local_port"' ${trojan_conf} | sed -r 's/.*: (.*),.*/\1/')"
+    [ -f ${tsp_conf} ] && echo -e "V2Ray 分流端口: $(grep '#V2Ray_Port' ${tsp_conf} | sed -r 's/.*:(.*) #.*/\1/')"
+    [ -f ${v2ray_conf} ] && echo -e"$(grep '"port":' ${v2ray_conf} | sed -r 's/.*: (.*),.*/\1/')"
+    echo -e "————————————————————————————————————————————————"
 }
 
 domain_port_check() {
@@ -291,11 +300,11 @@ trojan_reset() {
     "run_type": "server",
     "disable_http_check": true,
     "local_addr": "127.0.0.1",
-    "local_port":${tjport},
+    "local_port": ${tjport},
     "remote_addr": "1.1.1.1",
-    "remote_port":80,
+    "remote_port": 80,
     "fallback_addr": "1.1.1.1",
-    "fallback_port":443,
+    "fallback_port": 443,
     "password": ["${tjpasswd}"],
     "transport_plugin": {
         "enabled": true,
@@ -319,8 +328,8 @@ EOF
 
 tsp_sync() {
     if [[ -f ${tsp_conf} ]]; then
-        [ -f ${trojan_conf} ] && tjport="$(grep '"local_port"' ${trojan_conf} | sed -r 's/.*:(.*),.*/\1/')" && sed -i "/#Trojan-GO_Port/c \\      args: 127.0.0.1:${tjport} #Trojan-GO_Port" ${tsp_conf}
-        [ -f ${v2ray_conf} ] && v2port="$(grep '"port":' ${v2ray_conf} | sed -r 's/.*:(.*),.*/\1/')" && sed -i "/#V2Ray_Port/c \\        args: 127.0.0.1:${v2port} #V2Ray_Port" ${tsp_conf}
+        [ -f ${trojan_conf} ] && tjport="$(grep '"local_port"' ${trojan_conf} | sed -r 's/.*: (.*),.*/\1/')" && sed -i "/#Trojan-GO_Port/c \\      args: 127.0.0.1:${tjport} #Trojan-GO_Port" ${tsp_conf}
+        [ -f ${v2ray_conf} ] && v2port="$(grep '"port":' ${v2ray_conf} | sed -r 's/.*: (.*),.*/\1/')" && sed -i "/#V2Ray_Port/c \\        args: 127.0.0.1:${v2port} #V2Ray_Port" ${tsp_conf}
         [ -f ${v2ray_conf} ] && camouflage="$(grep '"path":' ${v2ray_conf} | awk -F '"' '{print $4}')" && sed -i "/#V2Ray_WSPATH/c \\      - path: ${camouflage} #V2Ray_WSPATH" ${tsp_conf}
         systemctl restart tls-shunt-proxy
         judge "TLS-Shunt-Proxy 同步配置 "
@@ -355,7 +364,7 @@ v2ray_reset() {
     },
     "inbounds": [
       {
-        "port":${v2port}, 
+        "port": ${v2port}, 
         "listen": "127.0.0.1", 
         "tag": "vmess-in", 
         "protocol": "vmess", 
@@ -363,7 +372,7 @@ v2ray_reset() {
          "clients": [
             {
               "id": "${UUID}", 
-             "alterId":${alterID}
+             "alterId": ${alterID}
             }
           ]
         }, 
@@ -490,7 +499,7 @@ EOF
     systemctl enable tls-shunt-proxy && systemctl restart tls-shunt-proxy
     judge "TLS-Shunt-Proxy 启动 "
 }
-update_docker_tsp(){
+update_docker_tsp() {
     maintain
 }
 install_trojan() {
@@ -569,7 +578,7 @@ bbr_boost_sh() {
     wget -N --no-check-certificate "https://raw.githubusercontent.com/ylx2016/Linux-NetSpeed/master/tcp.sh" && chmod +x tcp.sh && ./tcp.sh
 }
 
-uninstall_all(){
+uninstall_all() {
     maintain
 }
 
