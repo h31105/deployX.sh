@@ -43,7 +43,6 @@ version_cmp="/tmp/version_cmp.tmp"
 tsp_conf_dir="/etc/tls-shunt-proxy"
 trojan_conf_dir="/etc/trojan-go"
 v2ray_conf_dir="/etc/v2ray"
-nginx_conf_dir="/etc/nginx"
 tsp_conf="${tsp_conf_dir}/config.yaml"
 trojan_conf="${trojan_conf_dir}/config.json"
 v2ray_conf="${v2ray_conf_dir}/config.json"
@@ -707,6 +706,7 @@ menu() {
         docker restart Trojan-Go
         judge "Trojan-Go 应用新配置"
         info
+        sleep 2
         exit 0
         
         ;;
@@ -715,6 +715,7 @@ menu() {
         docker restart V2Ray
         judge "V2Ray 应用新配置"
         info
+        sleep 2
         exit 0
         ;;
     7)
