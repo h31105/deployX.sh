@@ -6,8 +6,7 @@
     ### 本脚本中使用的Docker镜像来自于 秋水大佬 在此感谢！
 
 ```
-wget -N --no-check-certificate -q -O deploy.sh \
-"https://raw.githubusercontent.com/h31105/trojan_v2_docker_onekey/master/deploy.sh" && \
+wget -N --no-check-certificate -q "https://raw.githubusercontent.com/h31105/trojan_v2_docker_onekey/master/deploy.sh" && \
 chmod +x deploy.sh && bash deploy.sh
 ```
 
