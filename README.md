@@ -1,8 +1,9 @@
 # trojan_v2_docker_onekey
-# 基于 Docker 容器架构的 Trojan-Go &amp; V2Ray WS TLS 部署脚本
+## 基于 Docker 容器架构的 Trojan-Go &amp; V2Ray WS TLS 部署脚本
 
-本脚本基于 wulabing大佬的优质脚本 V2Ray_ws-tls_bash_onekey 改写而成，使用Docker容器化部署Trojan-Go和V2Ray，前端使用TLS-Shunt-Proxy进行TLS端口共用分流。
-本脚本中使用的Docker镜像来自于 秋水大佬 在此感谢！
+### 本脚本基于 wulabing大佬的优质脚本 V2Ray_ws-tls_bash_onekey 改写而成，
+### 使用Docker容器化部署Trojan-Go和V2Ray，前端使用TLS-Shunt-Proxy进行TLS端口共用分流。
+### 本脚本中使用的Docker镜像来自于 秋水大佬 在此感谢！
 
 ```
 wget -N --no-check-certificate -q -O deploy.sh "https://raw.githubusercontent.com/h31105/trojan_v2_docker_onekey/master/deploy.sh" && chmod +x deploy.sh && bash deploy.sh
@@ -41,8 +42,10 @@ wget -N --no-check-certificate -q -O deploy.sh "https://raw.githubusercontent.co
     3 容器的镜像由 WatchTower 监控并自动更新 （建议安装）
     4 Portainer Docker的Web UI管理服务（HTTP 80）（可选）
 
-    注意：本脚本为Trojan-Go/V2Ray单用户配置，部署后，可以自定义配置内容，但不要使用脚本菜单中的修改选项，修改选项会 重置 相关配置信息。
-      部署后，请按需开启防火墙端口，例如 HTTP 80 HTTPS 443 端口
+    注意：
+    本脚本为Trojan-Go/V2Ray单用户配置，部署后，可以自定义配置内容，
+    但不要使用脚本菜单中的修改选项，修改选项会 重置 相关配置信息。
+    ！部署后，请按需开启防火墙端口，例如 HTTP 80 HTTPS 443 端口
 
     配置文件位置：
     网站路径 /home/wwwroot/ 证书文件存放在 /etc/ssl 由TSP自动管理。其他配置文件位置如下：
