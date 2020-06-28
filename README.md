@@ -5,7 +5,7 @@
     ### 使用Docker容器化部署Trojan-Go和V2Ray，前端使用TLS-Shunt-Proxy进行TLS端口共用分流。
     ### 本脚本中使用的Docker镜像来自于 秋水大佬 在此感谢！
 
-```
+```Bash
 wget -N --no-check-certificate -q "https://raw.githubusercontent.com/h31105/trojan_v2_docker_onekey/master/deploy.sh" && \
 chmod +x deploy.sh && bash deploy.sh
 ```
