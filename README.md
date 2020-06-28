@@ -1,12 +1,14 @@
-# trojan_v2_docker_onekey
-## 基于 Docker 容器架构的 Trojan-Go &amp; V2Ray WS TLS 部署脚本
+    # trojan_v2_docker_onekey
+    ## 基于 Docker 容器架构的 Trojan-Go &amp; V2Ray WS TLS 部署脚本
 
-### 本脚本基于 wulabing大佬的优质脚本 V2Ray_ws-tls_bash_onekey 改写而成，
-### 使用Docker容器化部署Trojan-Go和V2Ray，前端使用TLS-Shunt-Proxy进行TLS端口共用分流。
-### 本脚本中使用的Docker镜像来自于 秋水大佬 在此感谢！
+    ### 本脚本基于 wulabing大佬的优质脚本 V2Ray_ws-tls_bash_onekey 改写而成，
+    ### 使用Docker容器化部署Trojan-Go和V2Ray，前端使用TLS-Shunt-Proxy进行TLS端口共用分流。
+    ### 本脚本中使用的Docker镜像来自于 秋水大佬 在此感谢！
 
 ```
-wget -N --no-check-certificate -q -O deploy.sh "https://raw.githubusercontent.com/h31105/trojan_v2_docker_onekey/master/deploy.sh" && chmod +x deploy.sh && bash deploy.sh
+wget -N --no-check-certificate -q -O deploy.sh \
+"https://raw.githubusercontent.com/h31105/trojan_v2_docker_onekey/master/deploy.sh" && \
+chmod +x deploy.sh && bash deploy.sh
 ```
 
     使用简介：
