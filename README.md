@@ -12,7 +12,7 @@ wget -N --no-check-certificate -q -O deploy.sh "https://raw.githubusercontent.co
     ————————————————————部署管理————————————————————
     
     1.  安装 TLS-Shunt-Proxy（证书管理&网站伪装）
-    2.  安装 Trojan-Go / V2Ray WS (科学上网) 
+    2.  安装 Trojan-Go / V2Ray WS 
     3.  添加 WatchTower（容器自动更新）
     4.  添加 Portainer（容器管理）
     
@@ -41,7 +41,8 @@ wget -N --no-check-certificate -q -O deploy.sh "https://raw.githubusercontent.co
     3 容器的镜像由 WatchTower 监控并自动更新 （建议安装）
     4 Portainer Docker的Web UI管理服务（HTTP 80）（可选）
 
-    PS，本脚本为Trojan-Go/V2Ray单用户配置，部署后，可以自定义配置内容，但不要使用脚本菜单中的修改选项，修改选项会重置相关配置信息。
+    注意：本脚本为Trojan-Go/V2Ray单用户配置，部署后，可以自定义配置内容，但不要使用脚本菜单中的修改选项，修改选项会 重置 相关配置信息。
+      部署后，请按需开启防火墙端口，例如 HTTP 80 HTTPS 443 端口
 
     配置文件位置：
     网站路径 /home/wwwroot/ 证书文件存放在 /etc/ssl 由TSP自动管理。其他配置文件位置如下：
