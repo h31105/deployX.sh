@@ -353,8 +353,8 @@ v2ray_reset() {
     cat >$v2ray_conf_dir/config.json <<-EOF
 {
     "log": {
-        "access": "/var/log/v2ray/access.log",
-        "error": "/var/log/v2ray/error.log",
+        #"access": "/var/log/v2ray/access.log",
+        #"error": "/var/log/v2ray/error.log",
         "loglevel": "warning"
     },
     "inbounds": [
