@@ -36,7 +36,7 @@ WARN="${Yellow}[警告]${Font}"
 Error="${Red}[错误]${Font}"
 
 # 版本
-shell_version="0.92"
+shell_version="0.95"
 install_mode="None"
 github_branch="master"
 version_cmp="/tmp/version_cmp.tmp"
@@ -47,13 +47,12 @@ tsp_conf="${tsp_conf_dir}/config.yaml"
 trojan_conf="${trojan_conf_dir}/config.json"
 v2ray_conf="${v2ray_conf_dir}/config.json"
 web_dir="/home/wwwroot"
-old_config_status="off"
 
 #简易随机数
-random_num=$((RANDOM % 12 + 4))
+random_num=$((RANDOM % 3 + 7))
 #生成伪装路径
 camouflage="/$(head -n 10 /dev/urandom | md5sum | head -c ${random_num})/"
-THREAD=$(grep 'processor' /proc/cpuinfo | sort -u | wc -l)
+#THREAD="$(grep 'processor' /proc/cpuinfo | sort -u | wc -l)"
 source '/etc/os-release'
 
 #从VERSION中提取发行版系统的英文名称
@@ -78,11 +77,11 @@ check_system() {
 
     $INS install dbus
     systemctl stop firewalld
-    systemctl disable firewalld
-    echo -e "${OK} ${GreenBG} firewalld 已关闭 ${Font}"
+    #systemctl disable firewalld
+    echo -e "${OK} ${GreenBG} Firewalld 已关闭 ${Font}"
     systemctl stop ufw
-    systemctl disable ufw
-    echo -e "${OK} ${GreenBG} ufw 已关闭 ${Font}"
+    #systemctl disable ufw
+    echo -e "${OK} ${GreenBG} UFW 已关闭 ${Font}"
 }
 
 is_root() {
@@ -173,9 +172,6 @@ old_config_exist_check() {
         echo -e "${OK} ${GreenBG} 检测到旧配置文件，自动备份旧文件配置 ${Font}"
         cp "$1" "$1.$(date +%Y%m%d%H)"
         echo -e "${OK} ${GreenBG} 已备份旧配置  ${Font}"
-        old_config_status="on"
-    else
-        old_config_status="off"
     fi
 }
 
@@ -193,8 +189,9 @@ info() {
     [ -f ${v2ray_conf} ] && echo -e "V2Ray 伪装 HOST: $(grep '#TSP_Domain' ${tsp_conf} | sed -r 's/.*: (.*) #.*/\1/')"
     [ -f ${v2ray_conf} ] && echo -e "V2Ray WS PATH: $(grep '"path":' ${v2ray_conf} | awk -F '"' '{print $4}')"
     [ -f ${v2ray_conf} ] && echo -e "————————————————————————————————————————————————"
-    echo -e "                 服务器分流配置信息"
+    echo -e "               服务器分流配置信息"
     echo -e "————————————————————————————————————————————————"
+    [ -f ${tsp_conf} ] && echo -e "当前分流前端为：TLS-Shunt-Proxy 版本：$(/usr/local/bin/tls-shunt-proxy --version 2>&1 | awk 'NR==1{gsub(/"/,"");print $3}')"
     [ -f ${tsp_conf} ] && echo -e "服务器端口: $(grep '#TSP_Port' ${tsp_conf} | sed -r 's/.*0:(.*)#.*/\1/')"
     [ -f ${tsp_conf} ] && echo -e "服务器域名: $(grep '#TSP_Domain' ${tsp_conf} | sed -r 's/.*: (.*)#.*/\1/')"
     [ -f ${tsp_conf} ] && echo -e "Trojan-Go 分流端口: $(grep '#Trojan-Go_Port' ${tsp_conf} | sed -r 's/.*:(.*) #.*/\1/')"
@@ -202,7 +199,7 @@ info() {
     [ -f ${tsp_conf} ] && echo -e "V2Ray 分流端口: $(grep '#V2Ray_Port' ${tsp_conf} | sed -r 's/.*:(.*) #.*/\1/')"
     [ -f ${v2ray_conf} ] && echo -e "V2Ray 监听端口: $(grep '"port":' ${v2ray_conf} | sed -r 's/.*: (.*),.*/\1/')"
     echo -e "————————————————————————————————————————————————"
-    read WaitPressAnyKey
+    read -t 30 -n 1 -s -rp "按任意键继续（30s）..."
 }
 
 domain_port_check() {
@@ -250,22 +247,22 @@ port_exist_check() {
 }
 
 service_status_check() {
-    if systemctl is-active $1 &>/dev/null; then
-        #echo "${OK} ${GreenBG} $1 已经启动 ${Font}"
-        if systemctl is-enabled $1 &>/dev/null; then
-            #echo "${OK} ${GreenBG} $1 是开机自启动项 ${Font}"
-            service_status="OK"
+    if systemctl is-active "$1" &>/dev/null; then
+        echo "${OK} ${GreenBG} $1 已经启动 ${Font}"
+        if systemctl is-enabled "$1" &>/dev/null; then
+            echo "${OK} ${GreenBG} $1 是开机自启动项 ${Font}"
+            #service_status="OK"
         else
             echo -e "${WARN} ${Yellow} $1 不是开机自启动项 ${Font}"
-            service_status="Warning"
-            systemctl enable $1
+            #service_status="Warning"
+            systemctl enable "$1"
             judge "设置 $1 为开机自启动"
         fi
     else
         echo -e "${Error} ${RedBG} $1 未启动 ${Font}"
-        service_status="Error"
+        #service_status="Error"
         echo -e "${Error} ${RedBG} 检测到 $1 服务异常，正在尝试修复 ${Font}"
-        systemctl restart $1
+        systemctl restart "$1"
         judge "尝试启动 $1 "
         sleep 5
         echo -e "${WARN} ${Yellow} 请尝试重新安装修复后再试 ${Font}"
@@ -285,7 +282,7 @@ prereqcheck() {
 
 trojan_reset() {
     old_config_exist_check ${trojan_conf}
-    rm -rf ${trojan_conf} && old_config_status="off"
+    rm -rf ${trojan_conf}
     read -rp "请输入密码(Trojan-Go)，默认随机 :" tjpasswd
     [[ -z ${tjpasswd} ]] && tjpasswd=$(head -n 10 /dev/urandom | md5sum | head -c ${random_num})
     echo -e "${OK} ${GreenBG} Trojan-Go 密码: ${tjpasswd} ${Font}"
@@ -340,7 +337,7 @@ tsp_sync() {
 
 v2ray_reset() {
     old_config_exist_check ${v2ray_conf}
-    rm -rf ${v2ray_conf} && old_config_status="off"
+    rm -rf ${v2ray_conf}
     read -rp "请输入监听端口(V2Ray WS)，默认随机 :" v2port
     [[ -z ${v2port} ]] && v2port=$((RANDOM % 6666 + 20000))
     echo -e "${OK} ${GreenBG} V2Ray监听端口为 $v2port ${Font}"
@@ -457,8 +454,7 @@ install_docker() {
 
 install_tsp() {
     bash <(curl -L -s https://raw.githubusercontent.com/liberal-boy/tls-shunt-proxy/master/dist/install.sh)
-    rm -rf $tsp_conf && old_config_status="off"
-    cat >/etc/tls-shunt-proxy/config.yaml <<-EOF
+    rm -rf $tsp_conf && cat >$tsp_conf <<-EOF
 listen: 0.0.0.0:${tspport} #TSP_Port
 inboundbuffersize: 4
 outboundbuffersize: 32
@@ -466,7 +462,7 @@ vhosts:
   - name: ${domain} #TSP_Domain
     tlsoffloading: true
     managedcert: true
-    alpn: http/1.1
+    alpn: h2,http/1.1
     protocols: tls12,tls13
     http:
       paths:
@@ -483,10 +479,6 @@ EOF
     systemctl daemon-reload
     systemctl enable tls-shunt-proxy && systemctl restart tls-shunt-proxy
     judge "TLS-Shunt-Proxy 启动 "
-}
-
-upgrade_docker_tsp() {
-    maintain
 }
 
 install_trojan() {
@@ -578,7 +570,7 @@ bbr_boost_sh() {
 }
 
 uninstall_all() {
-    echo -e "${RedBG}!!!此操作将删除 TLS-Shunt-Proxy、Docker 平台 和 此脚本所安装的容器数据!!!${Font}" 
+    echo -e "${RedBG}!!!此操作将删除 TLS-Shunt-Proxy、Docker 平台 和 此脚本所安装的容器数据!!!${Font}"
     read -rp "请在确认后，输入 YES（区分大小写）:" uninstall
     [[ -z ${uninstall} ]] && uninstall="No"
     case $uninstall in
@@ -591,7 +583,7 @@ uninstall_all() {
         exit 2
         ;;
     esac
-    
+
     is_root
     check_system
     systemctl start docker
@@ -616,8 +608,34 @@ uninstall_all() {
     systemctl stop tls-shunt-proxy && systemctl disable tls-shunt-proxy
     rm -rf /etc/systemd/system/tls-shunt-proxy.service
     rm -rf /usr/local/bin/tls-shunt-proxy
-    rm -rf /etc/tls-shunt-proxy /etc/trojan-go /etc/v2ray
+    rm -rf $tsp_conf_dir $trojan_conf_dir $v2ray_conf_dir
     echo -e "${GreenBG}  Done! ${Font}"
+}
+
+upgrade_tsp() {
+    current_version="$(/usr/local/bin/tls-shunt-proxy --version 2>&1 | awk 'NR==1{gsub(/"/,"");print $3}')"
+    echo -e "${GreenBG} 当前版本: ${current_version}，开始检测最新版本... ${Font}"
+    latest_version="$(wget --no-check-certificate -qO- https://api.github.com/repos/liberal-boy/tls-shunt-proxy/tags | grep 'name' | cut -d\" -f4 | head -1)"
+    [[ -z ${latest_version} ]] && echo -e "${Error} 检测最新版本失败 ! ${Font}" && menu
+    if [[ ${latest_version} != "${current_version}" ]]; then
+        read -rp "${OK} ${GreenBG} 当前版本: ${current_version} 最新版本: ${latest_version}，是否更新 [Y/N]?：${Font}" update_confirm
+        [[ -z ${update_confirm} ]] && update_confirm="No"
+        case $update_confirm in
+        [yY][eE][sS] | [yY])
+            old_config_exist_check "${tsp_conf}"
+            bash <(curl -L -s https://raw.githubusercontent.com/liberal-boy/tls-shunt-proxy/master/dist/install.sh)
+            judge "TLS-Shunt-Proxy 更新"
+            systemctl daemon-reload && systemctl reset-failed
+            systemctl enable tls-shunt-proxy && systemctl restart tls-shunt-proxy
+            judge "TLS-Shunt-Proxy 重新启动"
+            exit 0
+            ;;
+        *) ;;
+        esac
+    else
+        echo -e "${OK} ${GreenBG} 当前 TLS-Shunt-Proxy 为最新版本 ${current_version} ${Font}"
+    fi
+
 }
 
 update_sh() {
@@ -639,13 +657,6 @@ update_sh() {
     else
         echo -e "${OK} ${GreenBG} 当前版本为最新版本 ${Font}"
     fi
-
-}
-
-maintain() {
-    echo -e "${RedBG}该选项暂时无法使用 ${Font}"
-    echo -e "${RedBG}$1${Font}"
-    exit 0
 }
 
 list() {
@@ -667,28 +678,25 @@ list() {
 
 menu() {
     clear
-    echo -e " TSP / TROJAN-GO / V2RAY 容器化部署脚本 \n"
-    echo -e "当前版本:${shell_version}\n"
-
-    echo -e "————————————————————部署管理————————————————————"
-    echo -e "${Green}1.${Font}  安装 TLS-Shunt-Proxy（证书管理&网站伪装）"
+    echo -e "${Green} TSP / TROJAN-GO / V2RAY 容器化部署脚本 版本: ${shell_version} ${Font}\n"
+    echo -e "——————————————————————部署管理——————————————————————"
+    echo -e "${Green}1.${Font}  安装 TLS-Shunt-Proxy（网站伪装 & 证书自动管理）"
     echo -e "${Green}2.${Font}  安装 Trojan-Go / V2Ray WS (科学上网) "
     echo -e "${Green}3.${Font}  添加 WatchTower（容器自动更新）"
-    echo -e "${Green}4.${Font}  添加 Portainer（容器管理）"
-    echo -e "————————————————————配置修改————————————————————"
+    echo -e "${Green}4.${Font}  添加 Portainer（容器管理 WebUI）"
+    echo -e "——————————————————————配置修改——————————————————————"
     echo -e "${Green}5.${Font}  修改 Troan-Go 配置"
     echo -e "${Green}6.${Font}  修改 V2Ray WS 配置"
-    echo -e "${Green}7.${Font}  修改 TLS端口 / 域名"
-    echo -e "————————————————————查看信息————————————————————"
+    echo -e "${Green}7.${Font}  修改 TLS 端口 / 域名"
+    echo -e "——————————————————————查看信息——————————————————————"
     echo -e "${Green}8.${Font}  查看 Trojan-Go / V2Ray 配置信息"
-    echo -e "————————————————————杂项管理————————————————————"
+    echo -e "——————————————————————杂项管理——————————————————————"
     echo -e "${Green}9.${Font}  安装 4合1 BBR 锐速脚本"
     echo -e "${Green}10.${Font} 升级 Docker / TLS-Shunt-Proxy"
     echo -e "${Green}11.${Font} 卸载 已安装的组件"
     echo -e "${Green}0.${Font}  退出脚本 "
-    echo -e "————————————————————————————————————————————————\n"
-
-    read -p "请输入数字 :" menu_num
+    echo -e "————————————————————————————————————————————————————\n"
+    read -rp "请输入数字：" menu_num
     case "$menu_num" in
     1)
         install_tls_shunt_proxy
@@ -703,7 +711,7 @@ menu() {
         ;;
     4)
         install_portainer
-	;;
+        ;;
     5)
         trojan_reset
         docker restart Trojan-Go
@@ -733,7 +741,9 @@ menu() {
         bbr_boost_sh
         ;;
     10)
-        upgrade_docker_tsp
+        install_docker
+        upgrade_tsp
+        info
         ;;
     11)
         uninstall_all
