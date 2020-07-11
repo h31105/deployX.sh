@@ -36,7 +36,7 @@ WARN="${Yellow}[警告]${Font}"
 Error="${Red}[错误]${Font}"
 
 # 版本
-shell_version="0.95"
+shell_version="0.96"
 install_mode="None"
 github_branch="master"
 version_cmp="/tmp/version_cmp.tmp"
@@ -52,7 +52,6 @@ web_dir="/home/wwwroot"
 random_num=$((RANDOM % 3 + 7))
 #生成伪装路径
 camouflage="/$(head -n 10 /dev/urandom | md5sum | head -c ${random_num})/"
-#THREAD="$(grep 'processor' /proc/cpuinfo | sort -u | wc -l)"
 source '/etc/os-release'
 
 #从VERSION中提取发行版系统的英文名称
@@ -178,28 +177,31 @@ old_config_exist_check() {
 info() {
     echo -e "                 客户端配置信息"
     echo -e "————————————————————————————————————————————————"
-    [ -f ${tsp_conf} ] && echo -e "服务器端口: $(grep '#TSP_Port' ${tsp_conf} | sed -r 's/.*0:(.*)#.*/\1/')"
-    [ -f ${tsp_conf} ] && echo -e "服务器域名: $(grep '#TSP_Domain' ${tsp_conf} | sed -r 's/.*: (.*)#.*/\1/')"
+
+    [ -f ${tsp_conf} ] && TSP_Port=$(grep '#TSP_Port' ${tsp_conf} | sed -r 's/.*0:(.*) #.*/\1/') && echo -e "服务器端口: ${TSP_Port}"
+    [ -f ${tsp_conf} ] && TSP_Domain=$(grep '#TSP_Domain' ${tsp_conf} | sed -r 's/.*: (.*) #.*/\1/') && echo -e "服务器域名: ${TSP_Domain}"
     echo -e "————————————————————————————————————————————————"
-    [ -f ${trojan_conf} ] && echo -e "Trojan-Go 密码: $(grep '"password"' ${trojan_conf} | awk -F '"' '{print $4}')"
+    [ -f ${trojan_conf} ] && TJ_Password=$(grep '"password"' ${trojan_conf} | awk -F '"' '{print $4}') && echo -e "Trojan-Go 密码: ${TJ_Password}"
     [ -f ${trojan_conf} ] && echo -e "————————————————————————————————————————————————"
-    [ -f ${v2ray_conf} ] && echo -e "V2Ray UUID: $(grep '"id":' ${v2ray_conf} | awk -F '"' '{print $4}')"
+    [ -f ${v2ray_conf} ] && V2UUID=$(grep '"id":' ${v2ray_conf} | awk -F '"' '{print $4}') && echo -e "V2Ray UUID: ${V2UUID}"
     [ -f ${v2ray_conf} ] && echo -e "V2Ray AlterID: $(grep '"alterId":' ${v2ray_conf} | awk -F ': ' '{print $2}')"
     [ -f ${v2ray_conf} ] && echo -e "V2Ray 加密方式: AUTO"
-    [ -f ${v2ray_conf} ] && echo -e "V2Ray 伪装 HOST: $(grep '#TSP_Domain' ${tsp_conf} | sed -r 's/.*: (.*) #.*/\1/')"
-    [ -f ${v2ray_conf} ] && echo -e "V2Ray WS PATH: $(grep '"path":' ${v2ray_conf} | awk -F '"' '{print $4}')"
+    [ -f ${v2ray_conf} ] && echo -e "V2Ray 伪装 HOST: ${TSP_Domain}"
+    [ -f ${v2ray_conf} ] && V2Path=$(grep '"path":' ${v2ray_conf} | awk -F '"' '{print $4}') && echo -e "V2Ray WS PATH: ${V2Path}"
     [ -f ${v2ray_conf} ] && echo -e "————————————————————————————————————————————————"
     echo -e "               服务器分流配置信息"
     echo -e "————————————————————————————————————————————————"
-    [ -f ${tsp_conf} ] && echo -e "当前分流前端为：TLS-Shunt-Proxy 版本：$(/usr/local/bin/tls-shunt-proxy --version 2>&1 | awk 'NR==1{gsub(/"/,"");print $3}')"
-    [ -f ${tsp_conf} ] && echo -e "服务器端口: $(grep '#TSP_Port' ${tsp_conf} | sed -r 's/.*0:(.*)#.*/\1/')"
-    [ -f ${tsp_conf} ] && echo -e "服务器域名: $(grep '#TSP_Domain' ${tsp_conf} | sed -r 's/.*: (.*)#.*/\1/')"
+    [ -f ${tsp_conf} ] && echo -e "当前分流前端为：TLS-Shunt-Proxy 版本 $(/usr/local/bin/tls-shunt-proxy --version 2>&1 | awk 'NR==1{gsub(/"/,"");print $3}')"
+    [ -f ${tsp_conf} ] && echo -e "服务器端口: ${TSP_Port}"
+    [ -f ${tsp_conf} ] && echo -e "服务器域名: ${TSP_Domain}"
     [ -f ${tsp_conf} ] && echo -e "Trojan-Go 分流端口: $(grep '#Trojan-Go_Port' ${tsp_conf} | sed -r 's/.*:(.*) #.*/\1/')"
     [ -f ${trojan_conf} ] && echo -e "Trojan-Go 监听端口: $(grep '"local_port"' ${trojan_conf} | sed -r 's/.*: (.*),.*/\1/')"
     [ -f ${tsp_conf} ] && echo -e "V2Ray 分流端口: $(grep '#V2Ray_Port' ${tsp_conf} | sed -r 's/.*:(.*) #.*/\1/')"
     [ -f ${v2ray_conf} ] && echo -e "V2Ray 监听端口: $(grep '"port":' ${v2ray_conf} | sed -r 's/.*: (.*),.*/\1/')"
     echo -e "————————————————————————————————————————————————"
-    read -t 30 -n 1 -s -rp "按任意键继续（30s）..."
+    [ -f ${trojan_conf} ] && echo -e "Trojan-Go 链接: \n trojan://${TJ_Password}@${TSP_Domain}:${TSP_Port}?allowinsecure=0&tfo=0&sni=${TSP_Domain}&mux=1&ws=0&wss=0&wsPath=&wsHostname=&wsObfsPassword=&group=#$HOSTNAME \n"
+    [ -f ${v2ray_conf} ] && echo -e "V2Ray 链接: \n vmess://$(echo "{\"add\":\"${TSP_Domain}\",\"aid\":\"6\",\"host\":\"${TSP_Domain}\",\"id\":\"${V2UUID}\",\"net\":\"ws\",\"path\":\"${V2Path}\",\"port\":\"${TSP_Port}\",\"ps\":\"$HOSTNAME\",\"tls\":\"tls\",\"type\":\"none\",\"v\":\"2\"}" | base64 -w 0) \n"
+    read -t 60 -n 1 -s -rp "按任意键继续（60s）..."
 }
 
 domain_port_check() {
@@ -248,9 +250,9 @@ port_exist_check() {
 
 service_status_check() {
     if systemctl is-active "$1" &>/dev/null; then
-        echo "${OK} ${GreenBG} $1 已经启动 ${Font}"
+        echo -e "${OK} ${GreenBG} $1 已经启动 ${Font}"
         if systemctl is-enabled "$1" &>/dev/null; then
-            echo "${OK} ${GreenBG} $1 是开机自启动项 ${Font}"
+            echo -e "${OK} ${GreenBG} $1 是开机自启动项 ${Font}"
             #service_status="OK"
         else
             echo -e "${WARN} ${Yellow} $1 不是开机自启动项 ${Font}"
@@ -614,7 +616,7 @@ uninstall_all() {
 
 upgrade_tsp() {
     current_version="$(/usr/local/bin/tls-shunt-proxy --version 2>&1 | awk 'NR==1{gsub(/"/,"");print $3}')"
-    echo -e "${GreenBG} 当前版本: ${current_version}，开始检测最新版本... ${Font}"
+    echo -e "${GreenBG} TLS-Shunt-Proxy 当前版本: ${current_version}，开始检测最新版本... ${Font}"
     latest_version="$(wget --no-check-certificate -qO- https://api.github.com/repos/liberal-boy/tls-shunt-proxy/tags | grep 'name' | cut -d\" -f4 | head -1)"
     [[ -z ${latest_version} ]] && echo -e "${Error} 检测最新版本失败 ! ${Font}" && menu
     if [[ ${latest_version} != "${current_version}" ]]; then
@@ -633,7 +635,7 @@ upgrade_tsp() {
         *) ;;
         esac
     else
-        echo -e "${OK} ${GreenBG} 当前 TLS-Shunt-Proxy 为最新版本 ${current_version} ${Font}"
+        echo -e "${OK} ${GreenBG} 当前 TLS-Shunt-Proxy 已经为最新版本 ${current_version} ${Font}"
     fi
 
 }
@@ -717,14 +719,12 @@ menu() {
         docker restart Trojan-Go
         judge "Trojan-Go 应用新配置"
         info
-        exit 0
         ;;
     6)
         v2ray_reset
         docker restart V2Ray
         judge "V2Ray 应用新配置"
         info
-        exit 0
         ;;
     7)
         domain_port_check
@@ -732,7 +732,6 @@ menu() {
         sed -i "/#TSP_Domain/c \\  - name: ${domain} #TSP_Domain" ${tsp_conf}
         tsp_sync
         info
-        exit 0
         ;;
     8)
         info
@@ -741,6 +740,7 @@ menu() {
         bbr_boost_sh
         ;;
     10)
+        echo -e "${GreenBG} 开始检测 Docker 最新版本（请不要中断）... ${Font}"
         install_docker
         upgrade_tsp
         info
