@@ -248,9 +248,9 @@ port_exist_check() {
 
 service_status_check() {
     if systemctl is-active "$1" &>/dev/null; then
-        echo "${OK} ${GreenBG} $1 已经启动 ${Font}"
+        echo -e "${OK} ${GreenBG} $1 已经启动 ${Font}"
         if systemctl is-enabled "$1" &>/dev/null; then
-            echo "${OK} ${GreenBG} $1 是开机自启动项 ${Font}"
+            echo -e "${OK} ${GreenBG} $1 是开机自启动项 ${Font}"
             #service_status="OK"
         else
             echo -e "${WARN} ${Yellow} $1 不是开机自启动项 ${Font}"
