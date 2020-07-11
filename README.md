@@ -13,10 +13,10 @@ chmod +x deploy.sh && bash deploy.sh
     使用简介：
     ————————————————————部署管理————————————————————
     
-    1.  安装 TLS-Shunt-Proxy（证书管理&网站伪装）
+    1.  安装 TLS-Shunt-Proxy（网站伪装 & 证书自动管理）
     2.  安装 Trojan-Go / V2Ray WS 
     3.  添加 WatchTower（容器自动更新）
-    4.  添加 Portainer（容器管理）
+    4.  添加 Portainer（容器管理 WebUI）
     
     ————————————————————配置修改————————————————————
     
