@@ -36,7 +36,7 @@ WARN="${Yellow}[警告]${Font}"
 Error="${Red}[错误]${Font}"
 
 # 版本
-shell_version="0.96"
+shell_version="0.97"
 install_mode="None"
 github_branch="master"
 version_cmp="/tmp/version_cmp.tmp"
@@ -181,8 +181,10 @@ info() {
     [ -f ${tsp_conf} ] && TSP_Port=$(grep '#TSP_Port' ${tsp_conf} | sed -r 's/.*0:(.*) #.*/\1/') && echo -e "服务器端口: ${TSP_Port}"
     [ -f ${tsp_conf} ] && TSP_Domain=$(grep '#TSP_Domain' ${tsp_conf} | sed -r 's/.*: (.*) #.*/\1/') && echo -e "服务器域名: ${TSP_Domain}"
     echo -e "————————————————————————————————————————————————"
+    [ -f ${trojan_conf} ] && echo -e "$(docker exec Trojan-Go sh -c 'trojan-go --version' 2>&1 | awk 'NR==1{gsub(/"/,"");print}')"
     [ -f ${trojan_conf} ] && TJ_Password=$(grep '"password"' ${trojan_conf} | awk -F '"' '{print $4}') && echo -e "Trojan-Go 密码: ${TJ_Password}"
     [ -f ${trojan_conf} ] && echo -e "————————————————————————————————————————————————"
+    [ -f ${v2ray_conf} ] && echo -e "$(docker exec V2Ray sh -c 'v2ray --version' 2>&1 | awk 'NR==1{gsub(/"/,"");print}')"
     [ -f ${v2ray_conf} ] && V2UUID=$(grep '"id":' ${v2ray_conf} | awk -F '"' '{print $4}') && echo -e "V2Ray UUID: ${V2UUID}"
     [ -f ${v2ray_conf} ] && echo -e "V2Ray AlterID: $(grep '"alterId":' ${v2ray_conf} | awk -F ': ' '{print $2}')"
     [ -f ${v2ray_conf} ] && echo -e "V2Ray 加密方式: AUTO"
@@ -525,6 +527,7 @@ install_portainer() {
 install_trojan_v2ray() {
     is_root
     check_system
+    chrony_install
     install_docker
     prereqcheck
     read -rp "请选择安装 Trojan-Go(T) / V2Ray WS(V) 或 共用分流(A)，(T/V/A):" install_mode
