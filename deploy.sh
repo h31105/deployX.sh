@@ -36,7 +36,7 @@ WARN="${Yellow}[警告]${Font}"
 Error="${Red}[错误]${Font}"
 
 # 版本
-shell_version="0.97"
+shell_version="0.98"
 install_mode="None"
 github_branch="master"
 version_cmp="/tmp/version_cmp.tmp"
@@ -193,7 +193,7 @@ info() {
     [ -f ${v2ray_conf} ] && echo -e "————————————————————————————————————————————————"
     echo -e "               服务器分流配置信息"
     echo -e "————————————————————————————————————————————————"
-    [ -f ${tsp_conf} ] && echo -e "当前分流前端为：TLS-Shunt-Proxy 版本 $(/usr/local/bin/tls-shunt-proxy --version 2>&1 | awk 'NR==1{gsub(/"/,"");print $3}')"
+    [ -f ${tsp_conf} ] && echo -e "TLS-Shunt-Proxy $(/usr/local/bin/tls-shunt-proxy --version 2>&1 | awk 'NR==1{gsub(/"/,"");print $3}')"
     [ -f ${tsp_conf} ] && echo -e "服务器端口: ${TSP_Port}"
     [ -f ${tsp_conf} ] && echo -e "服务器域名: ${TSP_Domain}"
     [ -f ${tsp_conf} ] && echo -e "Trojan-Go 分流端口: $(grep '#Trojan-Go_Port' ${tsp_conf} | sed -r 's/.*:(.*) #.*/\1/')"
@@ -201,8 +201,8 @@ info() {
     [ -f ${tsp_conf} ] && echo -e "V2Ray 分流端口: $(grep '#V2Ray_Port' ${tsp_conf} | sed -r 's/.*:(.*) #.*/\1/')"
     [ -f ${v2ray_conf} ] && echo -e "V2Ray 监听端口: $(grep '"port":' ${v2ray_conf} | sed -r 's/.*: (.*),.*/\1/')"
     echo -e "————————————————————————————————————————————————"
-    [ -f ${trojan_conf} ] && echo -e "Trojan-Go 链接: \n trojan://${TJ_Password}@${TSP_Domain}:${TSP_Port}?allowinsecure=0&tfo=0&sni=${TSP_Domain}&mux=1&ws=0&wss=0&wsPath=&wsHostname=&wsObfsPassword=&group=#$HOSTNAME \n"
-    [ -f ${v2ray_conf} ] && echo -e "V2Ray 链接: \n vmess://$(echo "{\"add\":\"${TSP_Domain}\",\"aid\":\"6\",\"host\":\"${TSP_Domain}\",\"id\":\"${V2UUID}\",\"net\":\"ws\",\"path\":\"${V2Path}\",\"port\":\"${TSP_Port}\",\"ps\":\"$HOSTNAME\",\"tls\":\"tls\",\"type\":\"none\",\"v\":\"2\"}" | base64 -w 0) \n"
+    [ -f ${trojan_conf} ] && echo -e " Trojan-Go 链接：\n trojan://${TJ_Password}@${TSP_Domain}:${TSP_Port}/?sni=${TSP_Domain}&allowinsecure=0&tfo=0&mux=1#$HOSTNAME\n"
+    [ -f ${v2ray_conf} ] && echo -e " V2Ray（V2RayN格式）链接：\n vmess://$(echo "{\"add\":\"${TSP_Domain}\",\"aid\":\"6\",\"host\":\"${TSP_Domain}\",\"id\":\"${V2UUID}\",\"net\":\"ws\",\"path\":\"${V2Path}\",\"port\":\"${TSP_Port}\",\"ps\":\"$HOSTNAME\",\"tls\":\"tls\",\"type\":\"none\",\"v\":\"2\"}" | base64 -w 0) \n\n（Shadowrocket格式）链接：\n vmess://$(echo "auto:${V2UUID}@${TSP_Domain}:${TSP_Port}"| base64 -w 0)?tls=1&mux=1&peer=${TSP_Domain}&allowInsecure=0&tfo=0&remarks=$HOSTNAME&obfs=websocket&obfsParam=${TSP_Domain}&path=${V2Path}\n"
     read -t 60 -n 1 -s -rp "按任意键继续（60s）..."
 }
 
