@@ -621,7 +621,7 @@ upgrade_tsp() {
     [[ -z ${latest_version} ]] && echo -e "${Error} 检测最新版本失败 ! ${Font}" && menu
     if [[ ${latest_version} != "${current_version}" ]]; then
         echo -e "${OK} ${GreenBG} 当前版本: ${current_version} 最新版本: ${latest_version}，是否更新 [Y/N]?：${Font}"
-        read -rp update_confirm
+        read -r update_confirm
         [[ -z ${update_confirm} ]] && update_confirm="No"
         case $update_confirm in
         [yY][eE][sS] | [yY])
