@@ -36,7 +36,7 @@ WARN="${Yellow}[警告]${Font}"
 Error="${Red}[错误]${Font}"
 
 # 版本
-shell_version="0.98"
+shell_version="0.99"
 install_mode="None"
 github_branch="master"
 version_cmp="/tmp/version_cmp.tmp"
@@ -196,13 +196,15 @@ info() {
     [ -f ${tsp_conf} ] && echo -e "TLS-Shunt-Proxy $(/usr/local/bin/tls-shunt-proxy --version 2>&1 | awk 'NR==1{gsub(/"/,"");print $3}')"
     [ -f ${tsp_conf} ] && echo -e "服务器端口: ${TSP_Port}"
     [ -f ${tsp_conf} ] && echo -e "服务器域名: ${TSP_Domain}"
-    [ -f ${tsp_conf} ] && echo -e "Trojan-Go 分流端口: $(grep '#Trojan-Go_Port' ${tsp_conf} | sed -r 's/.*:(.*) #.*/\1/')"
+    [ -f ${trojan_conf} ] && echo -e "Trojan-Go 分流端口: $(grep '#Trojan-Go_Port' ${tsp_conf} | sed -r 's/.*:(.*) #.*/\1/')"
     [ -f ${trojan_conf} ] && echo -e "Trojan-Go 监听端口: $(grep '"local_port"' ${trojan_conf} | sed -r 's/.*: (.*),.*/\1/')"
-    [ -f ${tsp_conf} ] && echo -e "V2Ray 分流端口: $(grep '#V2Ray_Port' ${tsp_conf} | sed -r 's/.*:(.*) #.*/\1/')"
+    [ -f ${v2ray_conf} ] && echo -e "V2Ray 分流端口: $(grep '#V2Ray_Port' ${tsp_conf} | sed -r 's/.*:(.*) #.*/\1/')"
+    [ -f ${v2ray_conf} ] && echo -e "V2Ray 分流路径: $(grep '#V2Ray_WSPATH' ${tsp_conf} | sed -r 's/.*: (.*) #.*/\1/')"
     [ -f ${v2ray_conf} ] && echo -e "V2Ray 监听端口: $(grep '"port":' ${v2ray_conf} | sed -r 's/.*: (.*),.*/\1/')"
     echo -e "————————————————————————————————————————————————"
-    [ -f ${trojan_conf} ] && echo -e " Trojan-Go 链接：\n trojan://${TJ_Password}@${TSP_Domain}:${TSP_Port}/?sni=${TSP_Domain}&allowinsecure=0&tfo=0&mux=1#$HOSTNAME\n"
-    [ -f ${v2ray_conf} ] && echo -e " V2Ray（V2RayN格式）链接：\n vmess://$(echo "{\"add\":\"${TSP_Domain}\",\"aid\":\"6\",\"host\":\"${TSP_Domain}\",\"id\":\"${V2UUID}\",\"net\":\"ws\",\"path\":\"${V2Path}\",\"port\":\"${TSP_Port}\",\"ps\":\"$HOSTNAME\",\"tls\":\"tls\",\"type\":\"none\",\"v\":\"2\"}" | base64 -w 0) \n\n（Shadowrocket格式）链接：\n vmess://$(echo "auto:${V2UUID}@${TSP_Domain}:${TSP_Port}"| base64 -w 0)?tls=1&mux=1&peer=${TSP_Domain}&allowInsecure=0&tfo=0&remarks=$HOSTNAME&obfs=websocket&obfsParam=${TSP_Domain}&path=${V2Path}\n"
+    [ -f ${trojan_conf} ] && echo -e " Trojan-Go 链接：\n trojan://${TJ_Password}@${TSP_Domain}:${TSP_Port}/?sni=${TSP_Domain}&peer=${TSP_Domain}&allowinsecure=0&tfo=0&mux=1#$HOSTNAME\n"
+    [ -f ${v2ray_conf} ] && echo -e " V2Ray（V2RayN格式）链接：\n vmess://$(echo "{\"add\":\"${TSP_Domain}\",\"aid\":\"6\",\"host\":\"${TSP_Domain}\",\"peer\":\"${TSP_Domain}\",\"id\":\"${V2UUID}\",\"net\":\"ws\",\"path\":\"${V2Path}\",\"port\":\"${TSP_Port}\",\"ps\":\"$HOSTNAME\",\"tls\":\"tls\",\"type\":\"none\",\"v\":\"2\"}" | base64 -w 0)\n"
+    [ -f ${v2ray_conf} ] && echo -e "（Shadowrocket格式）链接：\n vmess://$(echo "auto:${V2UUID}@${TSP_Domain}:${TSP_Port}" | base64 -w 0)?tls=1&mux=1&peer=${TSP_Domain}&allowInsecure=0&tfo=0&remarks=$HOSTNAME&obfs=websocket&obfsParam=${TSP_Domain}&path=${V2Path}\n"
     read -t 60 -n 1 -s -rp "按任意键继续（60s）..."
 }
 
@@ -466,6 +468,7 @@ vhosts:
   - name: ${domain} #TSP_Domain
     tlsoffloading: true
     managedcert: true
+    keytype: p256
     alpn: h2,http/1.1
     protocols: tls12,tls13
     http:
@@ -598,17 +601,11 @@ uninstall_all() {
     docker stop Portainer && docker rm Portainer
     systemctl stop docker && systemctl disable docker
     if [[ "${ID}" == "centos" ]]; then
-        ${INS} -y remove docker docker-client docker-client-latest docker-common docker-latest docker-latest-logrotate docker-logrotate docker-engine
-    ##    ${INS} -y install yum-utils
-    ##    yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
+        ${INS} -y remove docker-ce docker-ce-cli containerd.io docker docker-client docker-client-latest docker-common docker-latest docker-latest-logrotate docker-logrotate docker-engine
     else
-        ${INS} -y remove docker docker-engine docker.io containerd runc
-    ##    ${INS} -y install apt-transport-https ca-certificates curl gnupg-agent software-properties-common
-    ##    curl -fsSL https://download.docker.com/linux/debian/gpg | sudo apt-key add -
-    ##    add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/debian $(lsb_release -cs) stable" && ${INS} update
+        ${INS} -y remove docker-ce docker-ce-cli containerd.io docker docker-engine docker.io containerd runc
     fi
-    ##${INS} -y install docker-ce docker-ce-cli containerd.io
-    rm -rf /var/lib/docker #Removes all data
+    rm -rf /var/lib/docker #Removes all docker data
     rm -rf /etc/systemd/system/docker.service
     systemctl stop tls-shunt-proxy && systemctl disable tls-shunt-proxy
     rm -rf /etc/systemd/system/tls-shunt-proxy.service
@@ -623,7 +620,8 @@ upgrade_tsp() {
     latest_version="$(wget --no-check-certificate -qO- https://api.github.com/repos/liberal-boy/tls-shunt-proxy/tags | grep 'name' | cut -d\" -f4 | head -1)"
     [[ -z ${latest_version} ]] && echo -e "${Error} 检测最新版本失败 ! ${Font}" && menu
     if [[ ${latest_version} != "${current_version}" ]]; then
-        read -rp "${OK} ${GreenBG} 当前版本: ${current_version} 最新版本: ${latest_version}，是否更新 [Y/N]?：${Font}" update_confirm
+        echo -e "${OK} ${GreenBG} 当前版本: ${current_version} 最新版本: ${latest_version}，是否更新 [Y/N]?：${Font}"
+        read -rp update_confirm
         [[ -z ${update_confirm} ]] && update_confirm="No"
         case $update_confirm in
         [yY][eE][sS] | [yY])
@@ -633,7 +631,6 @@ upgrade_tsp() {
             systemctl daemon-reload && systemctl reset-failed
             systemctl enable tls-shunt-proxy && systemctl restart tls-shunt-proxy
             judge "TLS-Shunt-Proxy 重新启动"
-            exit 0
             ;;
         *) ;;
         esac
