@@ -202,7 +202,7 @@ info() {
     [ -f ${v2ray_conf} ] && echo -e "V2Ray 分流路径: $(grep '#V2Ray_WSPATH' ${tsp_conf} | sed -r 's/.*: (.*) #.*/\1/')"
     [ -f ${v2ray_conf} ] && echo -e "V2Ray 监听端口: $(grep '"port":' ${v2ray_conf} | sed -r 's/.*: (.*),.*/\1/')"
     echo -e "————————————————————————————————————————————————"
-    [ -f ${trojan_conf} ] && echo -e " Trojan-Go 链接：\n trojan://${TJ_Password}@${TSP_Domain}:${TSP_Port}/?sni=${TSP_Domain}&peer=${TSP_Domain}&allowinsecure=0&tfo=0&mux=1#$HOSTNAME\n"
+    [ -f ${trojan_conf} ] && echo -e " Trojan-Go 链接：\n trojan://${TJ_Password}@${TSP_Domain}:${TSP_Port}?sni=${TSP_Domain}&peer=${TSP_Domain}&allowinsecure=0&tfo=0&mux=1#$HOSTNAME\n"
     [ -f ${v2ray_conf} ] && echo -e " V2Ray（V2RayN格式）链接：\n vmess://$(echo "{\"add\":\"${TSP_Domain}\",\"aid\":\"6\",\"host\":\"${TSP_Domain}\",\"peer\":\"${TSP_Domain}\",\"id\":\"${V2UUID}\",\"net\":\"ws\",\"path\":\"${V2Path}\",\"port\":\"${TSP_Port}\",\"ps\":\"$HOSTNAME\",\"tls\":\"tls\",\"type\":\"none\",\"v\":\"2\"}" | base64 -w 0)\n"
     [ -f ${v2ray_conf} ] && echo -e "（Shadowrocket格式）链接：\n vmess://$(echo "auto:${V2UUID}@${TSP_Domain}:${TSP_Port}" | base64 -w 0)?tls=1&mux=1&peer=${TSP_Domain}&allowInsecure=0&tfo=0&remarks=$HOSTNAME&obfs=websocket&obfsParam=${TSP_Domain}&path=${V2Path}\n"
     read -t 60 -n 1 -s -rp "按任意键继续（60s）..."
