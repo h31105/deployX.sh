@@ -36,7 +36,7 @@ WARN="${Yellow}[警告]${Font}"
 Error="${Red}[错误]${Font}"
 
 # 版本
-shell_version="0.99"
+shell_version="1.00"
 install_mode="None"
 github_branch="master"
 version_cmp="/tmp/version_cmp.tmp"
@@ -214,7 +214,7 @@ domain_port_check() {
     read -rp "请输入你的域名信息(例如:fk.gfw.com):" domain
     domain_ip=$(ping "${domain}" -c 1 | sed '1{s/[^(]*(//;s/).*//;q}')
     echo -e "${OK} ${GreenBG} 正在获取 公网ip 信息，请耐心等待 ${Font}"
-    local_ip=$(curl -4 ip.sb)
+    local_ip=$(curl -s https://api.ip.sb/ip)
     echo -e "域名DNS解析IP：${domain_ip}"
     echo -e "本机IP: ${local_ip}"
     sleep 2
@@ -462,6 +462,7 @@ install_tsp() {
     bash <(curl -L -s https://raw.githubusercontent.com/liberal-boy/tls-shunt-proxy/master/dist/install.sh)
     rm -rf $tsp_conf && cat >$tsp_conf <<-EOF
 listen: 0.0.0.0:${tspport} #TSP_Port
+redirecthttps: 0.0.0.0:80
 inboundbuffersize: 4
 outboundbuffersize: 32
 vhosts:
@@ -523,7 +524,7 @@ install_portainer() {
     docker rm Portainer
     docker volume create portainer_data
     docker pull portainer/portainer
-    docker run -d -p 80:9000 --name Portainer --restart=always -v /var/run/docker.sock:/var/run/docker.sock -v portainer_data:/data portainer/portainer
+    docker run -d -p 9080:9000 --name Portainer --restart=always -v /var/run/docker.sock:/var/run/docker.sock -v portainer_data:/data portainer/portainer
     judge "Portainer 容器安装"
 }
 
