@@ -53,7 +53,8 @@ chmod +x deploy.sh && bash deploy.sh
     Trojan-Go ： /etc/trojan-go/config.json
     V2ray : /etc/v2ray/config.json
 
-    ## 本脚本最初基于 wulabing 大佬的优质脚本 V2Ray_ws-tls_bash_onekey 改写而成，脚本中使用的Docker镜像来自于 秋水逸冰（Teddysun），在此感谢！
+    ## 本脚本最初基于 wulabing 大佬的优质脚本 V2Ray_ws-tls_bash_onekey 改写而成，
+    脚本中使用的Docker镜像来自于 秋水逸冰（Teddysun），在此感谢！
 
     其他参考：
     # https://github.com/wulabing/V2Ray_ws-tls_bash_onekey
