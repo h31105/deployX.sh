@@ -1,43 +1,47 @@
     # trojan_v2_docker_onekey
-    ## 基于 Docker 容器架构的 Trojan-Go / V2Ray WS TLS 部署脚本
+    ## 基于 Docker 容器架构的 Trojan-Go/VLESS/VMess TLS 部署脚本
+    ### 本方案采用 TSP 进行 TLS 前置分流，后端使用 Trojan-Go、V2Ray 容器以及其他维护组件，实现几乎免维护的懒人体验。
 
-    ### 本脚本基于 wulabing大佬的优质脚本 V2Ray_ws-tls_bash_onekey 改写而成，
-    ### 使用Docker容器化部署Trojan-Go和V2Ray，前端使用TLS-Shunt-Proxy进行TLS端口共用分流。
-    ### 本脚本中使用的Docker镜像来自于 秋水大佬 在此感谢！
+    特别提醒：
+    本脚本 1.10 版本改动较多，使用 1.00 以前版本脚本部署的环境，与新版脚本存在配置兼容性问题；
+    请在脚本升级后，通过选项 1. 卸载 TLS-Shunt-Proxy 重新安装，来完成新版本的配置适配。
+
+    具体更新内容详见Release页面
 
 ```Bash
-wget -N --no-check-certificate -q "https://raw.githubusercontent.com/h31105/trojan_v2_docker_onekey/master/deploy.sh" && \
+wget -N --no-check-certificate -q "https://cdn.jsdelivr.net/gh/h31105/trojan_v2_docker_onekey@latest/deploy.sh" && \
 chmod +x deploy.sh && bash deploy.sh
 ```
 
     使用简介：
-    ————————————————————部署管理————————————————————
-    1.  安装 TLS-Shunt-Proxy（网站伪装 & 证书自动管理）
-    2.  安装 Trojan-Go / V2Ray WS 
-    3.  添加 WatchTower（容器自动更新）
-    4.  添加 Portainer（容器管理 WebUI）
-    ————————————————————配置修改————————————————————
-    5.  修改 Troan-Go 配置
-    6.  修改 V2Ray WS 配置
-    7.  修改 TLS端口 / 域名
-    ————————————————————查看信息————————————————————
-    8.  查看 Trojan-Go / V2Ray 配置信息
-    ————————————————————杂项管理————————————————————
-    9.  安装 4合1 BBR 锐速脚本
-    10. 升级 Docker / TLS-Shunt-Proxy
-    11. 卸载 已安装的组件
-    0.  退出脚本
-    ————————————————————————————————————————————————
+    ——————————————————————部署管理——————————————————————
+    1.  安装 TLS-Shunt-Proxy（网站&自动管理证书）
+    2.  安装 Trojan-Go TCP/WS 代理（容器）
+    3.  安装 V2Ray TCP/WS 代理（容器）
+    4.  安装 WatchTower（自动更新容器）
+    5.  安装 Portainer（Web管理容器）
+    ——————————————————————配置修改——————————————————————
+    6.  修改 TLS 端口/域名
+    7.  修改 Trojan-Go 代理配置
+    8.  修改 V2Ray 代理配置
+    ——————————————————————查看信息——————————————————————
+    9.  查看配置信息
+    ——————————————————————杂项管理——————————————————————
+    10. 升级 TLS-Shunt-Proxy/Docker 基础平台
+    11. 卸载 已安装的所有组件
+    12. 安装 4合1 BBR 锐速脚本
+    0.  退出脚本 
+    ————————————————————————————————————————————————————
     
     部署建议为：
     1 TLS-Shunt-Proxy 负责证书全自动管理和网站服务（HTTPS 默认443 HTTP 80 自动跳转）
-    2 Trojan-Go 和 V2Ray WS 容器化部署，可二选一，也可同时部署，并与网站共用TLS端口
-    3 容器的镜像由 WatchTower 监控并自动更新 （建议安装）
-    4 Portainer Docker的Web UI管理服务（http://domain-name:9080）（可选）
+    2 Trojan-Go 容器化部署 (可支持WebSocket)
+    3 V2Ray 容器化部署 （VLESS/VMess协议）
+    4 容器的镜像由 WatchTower 监控并自动更新 （建议安装）
+    5 Portainer 基于 Web 的 Docker 管理服务（http://domain-name:9080）（可选）
 
     注意：
-    本脚本为Trojan-Go/V2Ray单用户配置，部署后，可以自定义配置内容，
-    但不要使用脚本菜单中的修改选项，修改选项会 重置 相关配置信息。
+    本脚本为单用户配置，部署后可以自定义配置内容，但不要使用脚本菜单中的修改选项，修改选项会 重置 相关配置信息。
     ！部署后，请按需开启防火墙端口，例如 HTTP 80、9080 及 HTTPS 443 端口
 
     配置文件位置：
@@ -48,6 +52,8 @@ chmod +x deploy.sh && bash deploy.sh
     TLS-Shunt-Proxy : /etc/tls-shunt-proxy/config.yaml
     Trojan-Go ： /etc/trojan-go/config.json
     V2ray : /etc/v2ray/config.json
+
+    ## 本脚本最初基于 wulabing 大佬的优质脚本 V2Ray_ws-tls_bash_onekey 改写而成，脚本中使用的Docker镜像来自于 秋水逸冰（Teddysun），在此感谢！
 
     其他参考：
     # https://github.com/wulabing/V2Ray_ws-tls_bash_onekey

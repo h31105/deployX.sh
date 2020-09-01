@@ -1,16 +1,30 @@
 #!/bin/bash
-PATH=/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin:~/bin
-export PATH
 
-cd "$(
-    cd "$(dirname "$0")" || exit
-    pwd
-)" || exit
+#MIT License
+#Copyright (c) 2020 h31105
+
+#Permission is hereby granted, free of charge, to any person obtaining a copy
+#of this software and associated documentation files (the "Software"), to deal
+#in the Software without restriction, including without limitation the rights
+#to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+#copies of the Software, and to permit persons to whom the Software is
+#furnished to do so, subject to the following conditions:
+
+#The above copyright notice and this permission notice shall be included in all
+#copies or substantial portions of the Software.
+
+#THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+#IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+#FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+#AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+#LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+#OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+#SOFTWARE.
 
 #====================================================
 # System Request:Debian 9+/Ubuntu 18.04+/Centos 7+
 # Author: Miroku/h31105
-# Dscription: TLS-Shunt-Proxy&Trojan-Go Script
+# Dscription: TLS-Shunt-Proxy&Trojan-Go&V2Ray Script
 # Official document:
 # https://www.v2ray.com/
 # https://github.com/p4gefau1t/trojan-go
@@ -21,23 +35,32 @@ cd "$(
 # https://github.com/wulabing/V2Ray_ws-tls_bash_onekey
 #====================================================
 
-#fonts color
+PATH=/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin:~/bin
+export PATH
+
+cd "$(
+    cd "$(dirname "$0")" || exit
+    pwd
+)" || exit
+
+#Fonts Color
 Green="\033[32m"
 Red="\033[31m"
 Yellow="\033[33m"
-GreenBG="\033[30;37m"
-RedBG="\033[41;37m"
+GreenBG="\033[42;30m"
+RedBG="\033[41;30m"
 Font="\033[0m"
 
-#notification information
+#Notification Information
 # Info="${Green}[信息]${Font}"
 OK="${Green}[OK]${Font}"
 WARN="${Yellow}[警告]${Font}"
 Error="${Red}[错误]${Font}"
 
-# 版本
-shell_version="1.00"
-install_mode="None"
+#版本、初始化变量
+shell_version="1.10"
+tsp_cfg_version="0.63"
+upgrade_mode="none"
 github_branch="master"
 version_cmp="/tmp/version_cmp.tmp"
 tsp_conf_dir="/etc/tls-shunt-proxy"
@@ -52,6 +75,8 @@ web_dir="/home/wwwroot"
 random_num=$((RANDOM % 3 + 7))
 #生成伪装路径
 camouflage="/$(head -n 10 /dev/urandom | md5sum | head -c ${random_num})/"
+
+#shellcheck disable=SC1091
 source '/etc/os-release'
 
 #从VERSION中提取发行版系统的英文名称
@@ -76,28 +101,28 @@ check_system() {
 
     $INS install dbus
     systemctl stop firewalld
-    #systemctl disable firewalld
     echo -e "${OK} ${GreenBG} Firewalld 已关闭 ${Font}"
     systemctl stop ufw
-    #systemctl disable ufw
     echo -e "${OK} ${GreenBG} UFW 已关闭 ${Font}"
 }
 
 is_root() {
     if [ 0 == $UID ]; then
         echo -e "${OK} ${GreenBG} 当前用户是root用户，继续执行 ${Font}"
-        sleep 3
+        sleep 1
     else
         echo -e "${Error} ${RedBG} 当前用户不是root用户，请切换到root用户后重新执行脚本 ${Font}"
         exit 1
     fi
 }
+
 judge() {
+    #shellcheck disable=SC2181
     if [[ 0 -eq $? ]]; then
         echo -e "${OK} ${GreenBG} $1 完成 ${Font}"
         sleep 1
     else
-        echo -e "${Error} ${RedBG} $1 失败${Font}"
+        echo -e "${Error} ${RedBG} $1 失败 ${Font}"
         exit 1
     fi
 }
@@ -140,16 +165,17 @@ dependency_install() {
     judge "安装 unzip"
     ${INS} -y install curl
     judge "安装 curl"
-    ${INS} -y install wget
-    judge "安装 wget"
+    ${INS} -y install jq
+    judge "安装 jq"
+    ${INS} -y install moreutils
+    judge "安装 moreutils"
+    ${INS} -y install qrencode
+    judge "安装 qrencode"
     ${INS} -y install haveged
-    #judge "haveged 安装"
     if [[ "${ID}" == "centos" ]]; then
         systemctl start haveged && systemctl enable haveged
-        #judge "haveged 启动"
     else
         systemctl start haveged && systemctl enable haveged
-        #judge "haveged 启动"
     fi
 }
 
@@ -166,46 +192,12 @@ basic_optimization() {
     fi
 }
 
-old_config_exist_check() {
+config_exist_check() {
     if [[ -f "$1" ]]; then
         echo -e "${OK} ${GreenBG} 检测到旧配置文件，自动备份旧文件配置 ${Font}"
         cp "$1" "$1.$(date +%Y%m%d%H)"
-        echo -e "${OK} ${GreenBG} 已备份旧配置  ${Font}"
+        echo -e "${OK} ${GreenBG} 已备份旧配置 ${Font}"
     fi
-}
-
-info() {
-    echo -e "                 客户端配置信息"
-    echo -e "————————————————————————————————————————————————"
-
-    [ -f ${tsp_conf} ] && TSP_Port=$(grep '#TSP_Port' ${tsp_conf} | sed -r 's/.*0:(.*) #.*/\1/') && echo -e "服务器端口: ${TSP_Port}"
-    [ -f ${tsp_conf} ] && TSP_Domain=$(grep '#TSP_Domain' ${tsp_conf} | sed -r 's/.*: (.*) #.*/\1/') && echo -e "服务器域名: ${TSP_Domain}"
-    echo -e "————————————————————————————————————————————————"
-    [ -f ${trojan_conf} ] && echo -e "$(docker exec Trojan-Go sh -c 'trojan-go --version' 2>&1 | awk 'NR==1{gsub(/"/,"");print}')"
-    [ -f ${trojan_conf} ] && TJ_Password=$(grep '"password"' ${trojan_conf} | awk -F '"' '{print $4}') && echo -e "Trojan-Go 密码: ${TJ_Password}"
-    [ -f ${trojan_conf} ] && echo -e "————————————————————————————————————————————————"
-    [ -f ${v2ray_conf} ] && echo -e "$(docker exec V2Ray sh -c 'v2ray --version' 2>&1 | awk 'NR==1{gsub(/"/,"");print}')"
-    [ -f ${v2ray_conf} ] && V2UUID=$(grep '"id":' ${v2ray_conf} | awk -F '"' '{print $4}') && echo -e "V2Ray UUID: ${V2UUID}"
-    [ -f ${v2ray_conf} ] && echo -e "V2Ray AlterID: $(grep '"alterId":' ${v2ray_conf} | awk -F ': ' '{print $2}')"
-    [ -f ${v2ray_conf} ] && echo -e "V2Ray 加密方式: AUTO"
-    [ -f ${v2ray_conf} ] && echo -e "V2Ray 伪装 HOST: ${TSP_Domain}"
-    [ -f ${v2ray_conf} ] && V2Path=$(grep '"path":' ${v2ray_conf} | awk -F '"' '{print $4}') && echo -e "V2Ray WS PATH: ${V2Path}"
-    [ -f ${v2ray_conf} ] && echo -e "————————————————————————————————————————————————"
-    echo -e "               服务器分流配置信息"
-    echo -e "————————————————————————————————————————————————"
-    [ -f ${tsp_conf} ] && echo -e "TLS-Shunt-Proxy $(/usr/local/bin/tls-shunt-proxy --version 2>&1 | awk 'NR==1{gsub(/"/,"");print $3}')"
-    [ -f ${tsp_conf} ] && echo -e "服务器端口: ${TSP_Port}"
-    [ -f ${tsp_conf} ] && echo -e "服务器域名: ${TSP_Domain}"
-    [ -f ${trojan_conf} ] && echo -e "Trojan-Go 分流端口: $(grep '#Trojan-Go_Port' ${tsp_conf} | sed -r 's/.*:(.*) #.*/\1/')"
-    [ -f ${trojan_conf} ] && echo -e "Trojan-Go 监听端口: $(grep '"local_port"' ${trojan_conf} | sed -r 's/.*: (.*),.*/\1/')"
-    [ -f ${v2ray_conf} ] && echo -e "V2Ray 分流端口: $(grep '#V2Ray_Port' ${tsp_conf} | sed -r 's/.*:(.*) #.*/\1/')"
-    [ -f ${v2ray_conf} ] && echo -e "V2Ray 分流路径: $(grep '#V2Ray_WSPATH' ${tsp_conf} | sed -r 's/.*: (.*) #.*/\1/')"
-    [ -f ${v2ray_conf} ] && echo -e "V2Ray 监听端口: $(grep '"port":' ${v2ray_conf} | sed -r 's/.*: (.*),.*/\1/')"
-    echo -e "————————————————————————————————————————————————"
-    [ -f ${trojan_conf} ] && echo -e " Trojan-Go 链接：\n trojan://${TJ_Password}@${TSP_Domain}:${TSP_Port}?sni=${TSP_Domain}&peer=${TSP_Domain}&allowinsecure=0&tfo=0&mux=1#$HOSTNAME\n"
-    [ -f ${v2ray_conf} ] && echo -e " V2Ray（V2RayN格式）链接：\n vmess://$(echo "{\"add\":\"${TSP_Domain}\",\"aid\":\"6\",\"host\":\"${TSP_Domain}\",\"peer\":\"${TSP_Domain}\",\"id\":\"${V2UUID}\",\"net\":\"ws\",\"path\":\"${V2Path}\",\"port\":\"${TSP_Port}\",\"ps\":\"$HOSTNAME\",\"tls\":\"tls\",\"type\":\"none\",\"v\":\"2\"}" | base64 -w 0)\n"
-    [ -f ${v2ray_conf} ] && echo -e "（Shadowrocket格式）链接：\n vmess://$(echo "auto:${V2UUID}@${TSP_Domain}:${TSP_Port}" | base64 -w 0)?tls=1&mux=1&peer=${TSP_Domain}&allowInsecure=0&tfo=0&remarks=$HOSTNAME&obfs=websocket&obfsParam=${TSP_Domain}&path=${V2Path}\n"
-    read -t 60 -n 1 -s -rp "按任意键继续（60s）..."
 }
 
 domain_port_check() {
@@ -223,7 +215,7 @@ domain_port_check() {
         sleep 2
     else
         echo -e "${Error} ${RedBG} 请确保域名添加了正确的 A 记录，否则将无法正常连接 ${Font}"
-        echo -e "${Error} ${RedBG} 域名DNS解析IP 与 本机IP 不匹配 是否继续安装？（y/n）${Font}" && read -r install
+        echo -e "${Error} ${RedBG} 域名DNS解析IP 与 本机IP 不匹配 是否继续安装？（Y/N）[N]${Font}" && read -r install
         case $install in
         [yY][eE][sS] | [yY])
             echo -e "${GreenBG} 继续安装 ${Font}"
@@ -257,22 +249,22 @@ service_status_check() {
         echo -e "${OK} ${GreenBG} $1 已经启动 ${Font}"
         if systemctl is-enabled "$1" &>/dev/null; then
             echo -e "${OK} ${GreenBG} $1 是开机自启动项 ${Font}"
-            #service_status="OK"
         else
             echo -e "${WARN} ${Yellow} $1 不是开机自启动项 ${Font}"
-            #service_status="Warning"
             systemctl enable "$1"
             judge "设置 $1 为开机自启动"
         fi
     else
-        echo -e "${Error} ${RedBG} $1 未启动 ${Font}"
-        #service_status="Error"
-        echo -e "${Error} ${RedBG} 检测到 $1 服务异常，正在尝试修复 ${Font}"
-        systemctl restart "$1"
+        echo -e "${Error} ${RedBG} 检测到 $1 服务未启动，正在尝试启动... ${Font}"
+        systemctl restart "$1" && systemctl enable "$1"
         judge "尝试启动 $1 "
         sleep 5
-        echo -e "${WARN} ${Yellow} 请尝试重新安装修复后再试 ${Font}"
-        exit 4
+        if systemctl is-active "$1" &>/dev/null; then
+            echo -e "${OK} ${GreenBG} $1 已经启动 ${Font}"
+        else
+            echo -e "${WARN} ${Yellow} 请尝试重新安装修复 $1 后再试 ${Font}"
+            exit 4
+        fi
     fi
 }
 
@@ -287,14 +279,31 @@ prereqcheck() {
 }
 
 trojan_reset() {
-    old_config_exist_check ${trojan_conf}
-    rm -rf ${trojan_conf}
+    config_exist_check ${trojan_conf}
+    [[ -f ${trojan_conf} ]] && rm -rf ${trojan_conf}
+    if [[ -f ${tsp_conf} ]]; then
+        TSP_Domain=$(grep '#TSP_Domain' ${tsp_conf} | sed -r 's/.*: (.*) #.*/\1/') && echo -e "检测到TLS域名为: ${TSP_Domain}"
+    else
+        echo -e "${Error} ${RedBG} TLS-Shunt-Proxy 配置异常，无法检测到TLS域名信息，请重新安装后再试 ${Font}"
+        exit 4
+    fi
     read -rp "请输入密码(Trojan-Go)，默认随机 :" tjpasswd
     [[ -z ${tjpasswd} ]] && tjpasswd=$(head -n 10 /dev/urandom | md5sum | head -c ${random_num})
     echo -e "${OK} ${GreenBG} Trojan-Go 密码: ${tjpasswd} ${Font}"
-    read -rp "请输入监听端口(Trojan-Go)，默认随机 :" tjport
-    [[ -z ${tjport} ]] && tjport=$((RANDOM % 6666 + 10000))
-    echo -e "${OK} ${GreenBG} Trojan-Go 监听端口为: $tjport ${Font}"
+    read -rp "是否开启 WebSocket 模式支持 (Y/N) [N]:" trojan_ws_mode
+    [[ -z ${trojan_ws_mode} ]] && trojan_ws_mode=false
+    case $trojan_ws_mode in
+    [yY][eE][sS] | [yY])
+        camouflage="/$(head -n 10 /dev/urandom | md5sum | head -c ${random_num})/"
+        echo -e "${OK} ${GreenBG} Trojan-Go WebSocket 模式开启，WSPATH: ${camouflage} ${Font}"
+        trojan_ws_mode=true
+        ;;
+    *)
+        trojan_ws_mode=false
+        ;;
+    esac
+    trojan_tcp_mode=true
+    tjport=$((RANDOM % 6666 + 10000)) && echo -e "${OK} ${GreenBG} Trojan-Go 监听端口为: $tjport ${Font}"
     mkdir -p $trojan_conf_dir
     cat >/etc/trojan-go/config.json <<-EOF
 {
@@ -310,87 +319,100 @@ trojan_reset() {
     "transport_plugin": {
         "enabled": true,
         "type": "plaintext"
+    },
+    "websocket": {
+        "enabled": ${trojan_ws_mode},
+        "path": "${camouflage}",
+        "host": "${TSP_Domain}"
     }
 }
 EOF
     judge "Trojan-Go 配置生成"
     port_exist_check $tjport
-    if [[ -f ${tsp_conf} ]]; then
-        sed -i "/#Trojan-Go_Port/c \\      args: 127.0.0.1:${tjport} #Trojan-Go_Port" ${tsp_conf}
-        judge "同步 Trojan-Go 配置设置"
-        systemctl restart tls-shunt-proxy
-        judge "TLS-Shunt-Proxy 应用设置"
-        sleep 5
-        service_status_check tls-shunt-proxy
-    else
-        echo -e "${Error} ${RedBG} TLS-Shunt-Proxy 配置异常，请重新安装 ${Font}"
-        exit 4
-    fi
+    sed -i "/#Trojan_WS_Port/c \\        args: 127.0.0.1:${tjport} #Trojan_WS_Port:${trojan_ws_mode}" ${tsp_conf} &&
+        sed -i "/#Trojan_WS_Path/c \\      - path: ${camouflage} #Trojan_WS_Path" ${tsp_conf}
+    sed -i "/#Trojan_TCP_Port/c \\      args: 127.0.0.1:${tjport} #Trojan_TCP_Port:${trojan_tcp_mode}" ${tsp_conf}
+    judge "同步 Trojan-Go 配置设置"
+    systemctl restart tls-shunt-proxy && service_status_check tls-shunt-proxy
+    judge "TLS-Shunt-Proxy 应用设置"
 }
 
-tsp_sync() {
-    if [[ -f ${tsp_conf} ]]; then
-        [ -f ${trojan_conf} ] && tjport="$(grep '"local_port"' ${trojan_conf} | sed -r 's/.*: (.*),.*/\1/')" && sed -i "/#Trojan-Go_Port/c \\      args: 127.0.0.1:${tjport} #Trojan-Go_Port" ${tsp_conf}
-        [ -f ${v2ray_conf} ] && v2port="$(grep '"port":' ${v2ray_conf} | sed -r 's/.*: (.*),.*/\1/')" && sed -i "/#V2Ray_Port/c \\        args: 127.0.0.1:${v2port} #V2Ray_Port" ${tsp_conf}
-        [ -f ${v2ray_conf} ] && camouflage="$(grep '"path":' ${v2ray_conf} | awk -F '"' '{print $4}')" && sed -i "/#V2Ray_WSPATH/c \\      - path: ${camouflage} #V2Ray_WSPATH" ${tsp_conf}
-        systemctl restart tls-shunt-proxy
-        judge "TLS-Shunt-Proxy 同步配置 "
-    else
-        echo -e "${Error} ${RedBG} TLS-Shunt-Proxy 配置异常，请重新安装 ${Font}"
-        exit 4
-    fi
+modify_trojan() {
+    deployed_status_check
+    echo -e "${WARN} ${Yellow} 修改 Trojan-Go 配置将重置现有的代理配置信息，是否继续 (Y/N) [N]? ${Font}"
+    read -r modify_confirm
+    [[ -z ${modify_confirm} ]] && modify_confirm="No"
+    case $modify_confirm in
+    [yY][eE][sS] | [yY])
+        prereqcheck
+        trojan_reset
+        docker restart Trojan-Go
+        ;;
+    *) ;;
+    esac
+}
+
+v2ray_mode_type() {
+    read -rp "请选择 V2Ray TCP 模式协议类型：VMess(M)/VLESS(L)，默认跳过，(M/L) [Skip]:" v2ray_tcp_mode
+    [[ -z ${v2ray_tcp_mode} ]] && v2ray_tcp_mode="none"
+    case $v2ray_tcp_mode in
+    [mM])
+        echo -e "${GreenBG} 选择 VMess TCP 模式 ${Font}"
+        v2ray_tcp_mode="vmess"
+        ;;
+    [lL])
+        echo -e "${GreenBG} 选择 VLESS TCP 模式 ${Font}"
+        v2ray_tcp_mode="vless"
+        ;;
+    none)
+        echo -e "${GreenBG} 跳过 TCP 模式 ${Font}"
+        v2ray_tcp_mode="none"
+        ;;
+    *)
+        echo -e "${RedBG} 请输入正确的字母 (M/L) ${Font}"
+        ;;
+    esac
+    read -rp "请选择 V2Ray WebSocket 模式协议类型：VMess(M)/VLESS(L)，默认跳过，(M/L) [Skip]:" v2ray_ws_mode
+    [[ -z ${v2ray_ws_mode} ]] && v2ray_ws_mode="none"
+    case $v2ray_ws_mode in
+    [mM])
+        echo -e "${GreenBG} 选择 VMess WS 模式 ${Font}"
+        v2ray_ws_mode="vmess"
+        ;;
+    [lL])
+        echo -e "${GreenBG} 选择 VLESS WS 模式 ${Font}"
+        v2ray_ws_mode="vless"
+        ;;
+    none)
+        echo -e "${GreenBG} 跳过 WS 模式 ${Font}"
+        v2ray_ws_mode="none"
+        ;;
+    *)
+        echo -e "${RedBG} 请输入正确的字母 (M/L) ${Font}"
+        ;;
+    esac
 }
 
 v2ray_reset() {
-    old_config_exist_check ${v2ray_conf}
-    rm -rf ${v2ray_conf}
-    read -rp "请输入监听端口(V2Ray WS)，默认随机 :" v2port
-    [[ -z ${v2port} ]] && v2port=$((RANDOM % 6666 + 20000))
-    echo -e "${OK} ${GreenBG} V2Ray监听端口为 $v2port ${Font}"
-    read -rp "请输入 AlterID（默认:10 仅允许填数字）:" alterID
-    [[ -z ${alterID} ]] && alterID="10"
-    [ -z "$UUID" ] && UUID=$(cat /proc/sys/kernel/random/uuid)
-    echo -e "${OK} ${GreenBG} UUID:${UUID} ${Font}"
-    echo -e "${OK} ${GreenBG} WSPATH: ${camouflage} ${Font}"
+    config_exist_check ${v2ray_conf}
+    [[ -f ${v2ray_conf} ]] && rm -rf ${v2ray_conf}
     mkdir -p $v2ray_conf_dir
     cat >$v2ray_conf_dir/config.json <<-EOF
 {
     "log": {
-        #"access": "/var/log/v2ray/access.log",
-        #"error": "/var/log/v2ray/error.log",
         "loglevel": "warning"
     },
-    "inbounds": [
-      {
-        "port": ${v2port}, 
-        "listen": "127.0.0.1", 
-        "tag": "vmess-in", 
-        "protocol": "vmess", 
-        "settings": {
-         "clients": [
-            {
-              "id": "${UUID}", 
-             "alterId": ${alterID}
-            }
-          ]
-        }, 
-        "streamSettings": {
-          "network": "ws", 
-          "wsSettings": {
-           "path": "${camouflage}"
-          }
-        }
-      }
+    "inbounds":[
     ], 
     "outbounds": [
       {
         "protocol": "freedom", 
-        "settings": { }, 
+        "settings": {}, 
         "tag": "direct"
       }, 
       {
         "protocol": "blackhole", 
-        "settings": { }, 
+        "settings": {}, 
         "tag": "blocked"
       }
     ], 
@@ -405,8 +427,14 @@ v2ray_reset() {
       ]
     },
     "routing": {
-      "domainStrategy": "IPOnDemand",
       "rules": [
+        {
+            "ip": [
+            "geoip:private"
+            ],
+            "outboundTag": "blocked",
+            "type": "field"
+        },
         {
           "type": "field",
           "outboundTag": "blocked",
@@ -415,7 +443,6 @@ v2ray_reset() {
         {
           "type": "field",
           "inboundTag": [
-            "vmess-in"
           ],
           "outboundTag": "direct"
         }
@@ -423,21 +450,73 @@ v2ray_reset() {
     }
 }
 EOF
-    judge "V2Ray 配置生成"
-    port_exist_check $v2port
+    if [[ "${v2ray_ws_mode}" = v*ess ]]; then
+        UUID=$(cat /proc/sys/kernel/random/uuid)
+        echo -e "${OK} ${GreenBG} UUID:${UUID} ${Font}"
+        camouflage="/$(head -n 10 /dev/urandom | md5sum | head -c ${random_num})/"
+        echo -e "${OK} ${GreenBG} 开启V2Ray WS模式，WSPATH: ${camouflage} ${Font}"
+        v2wsport=$((RANDOM % 6666 + 30000))
+        echo -e "${OK} ${GreenBG} V2Ray WS 监听端口为 ${v2wsport} ${Font}"
+        if [[ "${v2ray_ws_mode}" = "vmess" ]]; then
+            #read -rp "请输入 WS 模式 AlterID（默认:10 仅允许填非0数字）:" alterID
+            [[ -z ${alterID} ]] && alterID="10"
+            jq '.inbounds += [{"sniffing":{"enabled":true,"destOverride":["http","tls"]},"port":'${v2wsport}',"listen":"127.0.0.1","tag":"vmess-ws-in","protocol":"vmess","settings":{"clients":[{"id":"'"${UUID}"'","alterId":'${alterID}'}]},"streamSettings":{"network":"ws","wsSettings":{"acceptProxyProtocol":true,"path":"'"${camouflage}"'"}}}]' ${v2ray_conf} | sponge ${v2ray_conf} &&
+                jq '.routing.rules[2].inboundTag += ["vmess-ws-in"]' ${v2ray_conf} | sponge ${v2ray_conf}
+            judge "V2Ray VMess WS配置生成"
+        fi
+        if [[ "${v2ray_ws_mode}" = "vless" ]]; then
+            jq '.inbounds += [{"sniffing":{"enabled":true,"destOverride":["http","tls"]},"port":'${v2wsport}',"listen":"127.0.0.1","tag":"vless-ws-in","protocol":"vless","settings":{"clients":[{"id":"'"${UUID}"'","level":0}],"decryption":"none"},"streamSettings":{"network":"ws","wsSettings":{"acceptProxyProtocol":true,"path":"'"${camouflage}"'"}}}]' ${v2ray_conf} | sponge ${v2ray_conf} &&
+                jq '.routing.rules[2].inboundTag += ["vless-ws-in"]' ${v2ray_conf} | sponge ${v2ray_conf}
+            judge "V2Ray VLESS WS配置生成"
+        fi
+        port_exist_check ${v2wsport}
+    fi
+    if [[ "${v2ray_tcp_mode}" = v*ess ]]; then
+        UUID=$(cat /proc/sys/kernel/random/uuid)
+        echo -e "${OK} ${GreenBG} UUID:${UUID} ${Font}"
+        v2port=$((RANDOM % 6666 + 20000))
+        echo -e "${OK} ${GreenBG} V2Ray TCP 监听端口为 ${v2port} ${Font}"
+        if [[ "${v2ray_tcp_mode}" = "vmess" ]]; then
+            #read -rp "请输入 TCP 模式 AlterID（默认:10 仅允许填非0数字）:" alterID
+            [[ -z ${alterID} ]] && alterID="10"
+            jq '.inbounds += [{"sniffing":{"enabled":true,"destOverride":["http","tls"]},"port":'${v2port}',"listen":"127.0.0.1","tag":"vmess-tcp-in","protocol":"vmess","settings":{"clients":[{"id":"'"${UUID}"'","alterId":'${alterID}'}]},"streamSettings":{"network":"tcp","tcpSettings":{"acceptProxyProtocol":true}}}]' ${v2ray_conf} | sponge ${v2ray_conf} &&
+                jq '.routing.rules[2].inboundTag += ["vmess-tcp-in"]' ${v2ray_conf} | sponge ${v2ray_conf}
+            judge "V2Ray VMess TCP配置生成"
+        fi
+        if [[ "${v2ray_tcp_mode}" = "vless" ]]; then
+            jq '.inbounds += [{"sniffing":{"enabled":true,"destOverride":["http","tls"]},"port":'${v2port}',"listen":"127.0.0.1","tag":"vless-tcp-in","protocol":"vless","settings":{"clients":[{"id":"'"${UUID}"'","level":0}],"decryption":"none"},"streamSettings":{"network":"tcp","tcpSettings":{"acceptProxyProtocol":true}}}]' ${v2ray_conf} | sponge ${v2ray_conf} &&
+                jq '.routing.rules[2].inboundTag += ["vless-tcp-in"]' ${v2ray_conf} | sponge ${v2ray_conf}
+            judge "V2Ray VLESS TCP配置生成"
+        fi
+        port_exist_check ${v2port}
+    fi
     if [[ -f ${tsp_conf} ]]; then
-        sed -i "/#V2Ray_Port/c \\        args: 127.0.0.1:${v2port} #V2Ray_Port" ${tsp_conf}
-        sed -i "/#V2Ray_WSPATH/c \\      - path: ${camouflage} #V2Ray_WSPATH" ${tsp_conf}
-        judge "同步 V2Ray WS 配置"
-        systemctl restart tls-shunt-proxy
+        sed -i "/#V2Ray_WS_Port/c \\        args: 127.0.0.1:${v2wsport};proxyProtocol #V2Ray_WS_Port:${v2ray_ws_mode}" ${tsp_conf} &&
+            sed -i "/#V2Ray_WS_Path/c \\      - path: ${camouflage} #V2Ray_WS_Path" ${tsp_conf}
+        sed -i "/#V2Ray_TCP_Port/c \\      args: 127.0.0.1:${v2port};proxyProtocol #V2Ray_TCP_Port:${v2ray_tcp_mode}" ${tsp_conf}
+        judge "同步 V2Ray 配置"
+        systemctl restart tls-shunt-proxy && service_status_check tls-shunt-proxy
         judge "TLS-Shunt-Proxy 应用设置"
-        sleep 5
-        service_status_check tls-shunt-proxy
     else
-        echo -e "${Error} ${RedBG} TLS-Shunt-Proxy 配置异常，请重新安装 ${Font}"
+        echo -e "${Error} ${RedBG} TLS-Shunt-Proxy 配置异常，请重新安装后再试 ${Font}"
         exit 4
     fi
+}
 
+modify_v2ray() {
+    deployed_status_check
+    echo -e "${WARN} ${Yellow} 修改 V2Ray 配置将重置现有的代理配置信息，是否继续 (Y/N) [N]? ${Font}"
+    read -r modify_confirm
+    [[ -z ${modify_confirm} ]] && modify_confirm="No"
+    case $modify_confirm in
+    [yY][eE][sS] | [yY])
+        prereqcheck
+        v2ray_mode_type
+        [[ $v2ray_tcp_mode != "none" || $v2ray_ws_mode != "none" ]] && v2ray_reset
+        docker restart V2Ray
+        ;;
+    *) ;;
+    esac
 }
 
 web_camouflage() {
@@ -446,10 +525,11 @@ web_camouflage() {
     mkdir -p $web_dir
     cd $web_dir || exit
     git clone https://github.com/h31105/LodeRunner_TotalRecall.git
-    judge "Web 站点伪装"
+    judge "Website 伪装"
 }
 
 install_docker() {
+    echo -e "${GreenBG} 开始安装 Docker 最新版本 ... ${Font}"
     curl -fsSL https://get.docker.com -o get-docker.sh
     sh get-docker.sh
     judge "安装 Docker "
@@ -465,7 +545,7 @@ listen: 0.0.0.0:${tspport} #TSP_Port
 redirecthttps: 0.0.0.0:80
 inboundbuffersize: 4
 outboundbuffersize: 32
-vhosts:
+vhosts: #TSP_CFG_Ver:${tsp_cfg_version}
   - name: ${domain} #TSP_Domain
     tlsoffloading: true
     managedcert: true
@@ -474,101 +554,122 @@ vhosts:
     protocols: tls12,tls13
     http:
       paths:
-      - path: ${camouflage} #V2Ray_WSPATH
+      - path: /trojan/${camouflage} #Trojan_WS_Path
         handler: proxyPass
-        args: 127.0.0.1:36280 #V2Ray_Port
+        args: 127.0.0.1:40000 #Trojan_WS_Port:${trojan_ws_mode}
+      - path: /v2ray/${camouflage} #V2Ray_WS_Path
+        handler: proxyPass
+        args: 127.0.0.1:40002;proxyProtocol #V2Ray_WS_Port:${v2ray_ws_mode}
       handler: fileServer
-      args: ${web_dir}/LodeRunner_TotalRecall #伪装站
+      args: ${web_dir}/LodeRunner_TotalRecall #Website
+    trojan:
+      handler: proxyPass
+      args: 127.0.0.1:40001 #Trojan_TCP_Port:${trojan_tcp_mode}
     default:
       handler: proxyPass
-      args: 127.0.0.1:26666 #Trojan-Go_Port
+      args: 127.0.0.1:40003;proxyProtocol #V2Ray_TCP_Port:${v2ray_tcp_mode}
 EOF
     judge "安装 TLS-Shunt-Proxy"
     systemctl daemon-reload
     systemctl enable tls-shunt-proxy && systemctl restart tls-shunt-proxy
-    judge "TLS-Shunt-Proxy 启动 "
+    judge "TLS-Shunt-Proxy 启动"
+}
+
+modify_tsp() {
+    domain_port_check
+    sed -i "/#TSP_Port/c \\listen: 0.0.0.0:${tspport} #TSP_Port" ${tsp_conf}
+    sed -i "/#TSP_Domain/c \\  - name: ${domain} #TSP_Domain" ${tsp_conf}
+    tsp_sync
+    info
+}
+
+tsp_sync() {
+    echo -e "${OK} ${GreenBG} TLS-Shunt-Proxy 检测并同步现有代理配置... ${Font}"
+    if [[ $trojan_stat = "installed" ]] && [[ -f ${trojan_conf} ]]; then
+        tjport="$(grep '"local_port"' ${trojan_conf} | sed -r 's/.*: (.*),.*/\1/')" && trojan_tcp_mode=true &&
+            tjwspath="$(grep '"path":' ${trojan_conf} | awk -F '"' '{print $4}')" && trojan_ws_mode="$(jq -r '.websocket.enabled' ${trojan_conf})"
+        judge "检测 Trojan-Go 配置"
+        [[ -z $tjport ]] && trojan_tcp_mode=false
+        [[ $trojan_ws_mode = null ]] && trojan_ws_mode=false
+        [[ -z $tjwspath ]] && tjwspath=none
+        echo -e "检测到：Trojan-Go 代理：TCP：${Green}${trojan_tcp_mode}${Font} / WebSocket：${Green}${trojan_ws_mode}${Font} / 端口：${Green}${tjport}${Font} / WebSocket Path：${Green}${tjwspath}${Font}"
+    fi
+
+    if [[ $v2ray_stat = "installed" && -f ${v2ray_conf} ]]; then
+        sed -i '/\#\"/d' ${v2ray_conf}
+        v2port="$(jq -r '[.inbounds[] | select(.streamSettings.network=="tcp") | .port][0]' ${v2ray_conf})" &&
+            v2wsport="$(jq -r '[.inbounds[] | select(.streamSettings.network=="ws") | .port][0]' ${v2ray_conf})" &&
+            v2ray_tcp_mode="$(jq -r '[.inbounds[] | select(.streamSettings.network=="tcp") | .protocol][0]' ${v2ray_conf})" &&
+            v2ray_ws_mode="$(jq -r '[.inbounds[] | select(.streamSettings.network=="ws") | .protocol][0]' ${v2ray_conf})" &&
+            v2wspath="$(jq -r '[.inbounds[] | select(.streamSettings.network=="ws") | .streamSettings.wsSettings.path][0]' ${v2ray_conf})"
+        judge "检测 V2Ray 配置"
+        [[ $v2port = null ]] && v2port=none
+        [[ $v2wsport = null ]] && v2wsport=none
+        [[ $v2ray_tcp_mode = null ]] && v2ray_tcp_mode=none
+        [[ $v2ray_ws_mode = null ]] && v2ray_ws_mode=none
+        [[ $v2wspath = null ]] && v2wspath=none
+        echo -e "检测到：V2Ray 代理：TCP：${Green}${v2ray_tcp_mode}${Font} 端口：${Green}${v2port}${Font} / WebSocket：${Green}${v2ray_ws_mode}${Font} 端口：${Green}${v2wsport}${Font} / WebSocket Path：${Green}${v2wspath}${Font}"
+    fi
+
+    if [[ -f ${tsp_conf} ]]; then
+        sed -i "/#Trojan_TCP_Port/c \\      args: 127.0.0.1:${tjport} #Trojan_TCP_Port:${trojan_tcp_mode}" ${tsp_conf} && sed -i "/#Trojan_WS_Port/c \\        args: 127.0.0.1:${tjport} #Trojan_WS_Port:${trojan_ws_mode}" ${tsp_conf} &&
+            sed -i "/#Trojan_WS_Path/c \\      - path: ${tjwspath} #Trojan_WS_Path" ${tsp_conf}
+        sed -i "/#V2Ray_TCP_Port/c \\      args: 127.0.0.1:${v2port};proxyProtocol #V2Ray_TCP_Port:${v2ray_tcp_mode}" ${tsp_conf} && sed -i "/#V2Ray_WS_Port/c \\        args: 127.0.0.1:${v2wsport};proxyProtocol #V2Ray_WS_Port:${v2ray_ws_mode}" ${tsp_conf} &&
+            sed -i "/#V2Ray_WS_Path/c \\      - path: ${v2wspath} #V2Ray_WS_Path" ${tsp_conf}
+        systemctl restart tls-shunt-proxy
+        judge "TLS-Shunt-Proxy 同步配置 "
+    else
+        echo -e "${Error} ${RedBG} TLS-Shunt-Proxy 配置异常，请重新安装后再试 ${Font}"
+        exit 4
+    fi
 }
 
 install_trojan() {
+    #check_system
+    [[ $(systemctl is-active "docker") = "inactive" ]] && install_docker
+    prereqcheck
     trojan_reset
-    docker stop Trojan-Go
-    docker rm Trojan-Go
     docker pull teddysun/trojan-go
     docker run -d --network host --name Trojan-Go --restart=always -v /etc/trojan-go:/etc/trojan-go teddysun/trojan-go
     judge "Trojan-Go 容器安装"
 }
 
 install_v2ray() {
-    v2ray_reset
-    docker stop V2Ray
-    docker rm V2Ray
-    docker pull teddysun/V2Ray
-    docker run -d --network host --name V2Ray --restart=always -v /etc/v2ray:/etc/v2ray teddysun/v2ray
-    judge "V2Ray WS 容器安装"
+    #check_system
+    #chrony_install
+    [[ $(systemctl is-active "docker") = "inactive" ]] && install_docker
+    prereqcheck
+    v2ray_mode_type
+    if [[ $v2ray_tcp_mode != "none" || $v2ray_ws_mode != "none" ]]; then
+        v2ray_reset
+        docker pull teddysun/v2ray
+        docker run -d --network host --name V2Ray --restart=always -v /etc/v2ray:/etc/v2ray teddysun/v2ray
+        judge "V2Ray 容器安装"
+    fi
 }
 
 install_watchtower() {
-    is_root
-    prereqcheck
-    docker stop WatchTower
-    docker rm WatchTower
     docker pull containrrr/watchtower
     docker run -d --name WatchTower --restart=always -v /var/run/docker.sock:/var/run/docker.sock containrrr/watchtower --cleanup
     judge "WatchTower 容器安装"
 }
 
 install_portainer() {
-    is_root
-    prereqcheck
-    docker stop Portainer
-    docker rm Portainer
     docker volume create portainer_data
     docker pull portainer/portainer
     docker run -d -p 9080:9000 --name Portainer --restart=always -v /var/run/docker.sock:/var/run/docker.sock -v portainer_data:/data portainer/portainer
     judge "Portainer 容器安装"
-}
-
-install_trojan_v2ray() {
-    is_root
-    check_system
-    chrony_install
-    install_docker
-    prereqcheck
-    read -rp "请选择安装 Trojan-Go(T) / V2Ray WS(V) 或 共用分流(A)，(T/V/A):" install_mode
-    [[ -z ${install_mode} ]] && install_mode="None"
-    case $install_mode in
-    [tT]rojan | [tT])
-        echo -e "${GreenBG} 开始安装 Trojan-Go ${Font}"
-        install_mode="Trojan"
-        sleep 3
-        install_trojan
-        ;;
-    [vV]2[rR]ay | [vV])
-        echo -e "${GreenBG} 开始安装 V2Ray WS ${Font}"
-        install_mode="V2Ray"
-        sleep 3
-        install_v2ray
-        ;;
-    [aA]ll | [aA])
-        echo -e "${GreenBG} 开始安装 Trojan-Go & V2Ray WS ${Font}"
-        sleep 3
-        install_trojan
-        install_v2ray
-        ;;
-    *)
-        echo -e "${RedBG} 请输入正确的字母(T/V/A) ${Font}"
-        ;;
-    esac
+    echo -e "${OK} ${GreenBG} Portainer 管理地址为 http://$TSP_Domain:9080 请自行开启防火墙端口！ ${Font}"
 }
 
 install_tls_shunt_proxy() {
-    is_root
     check_system
     dependency_install
     basic_optimization
     domain_port_check
     port_exist_check "${tspport}"
-    old_config_exist_check "${tsp_conf}"
+    config_exist_check "${tsp_conf}"
+    port_exist_check 80
     web_camouflage
     install_tsp
 }
@@ -579,7 +680,7 @@ bbr_boost_sh() {
 }
 
 uninstall_all() {
-    echo -e "${RedBG}!!!此操作将删除 TLS-Shunt-Proxy、Docker 平台 和 此脚本所安装的容器数据!!!${Font}"
+    echo -e "${RedBG} !!!此操作将删除 TLS-Shunt-Proxy、Docker 平台 和 此脚本所安装的容器数据!!! ${Font}"
     read -rp "请在确认后，输入 YES（区分大小写）:" uninstall
     [[ -z ${uninstall} ]] && uninstall="No"
     case $uninstall in
@@ -592,27 +693,70 @@ uninstall_all() {
         exit 2
         ;;
     esac
-
-    is_root
     check_system
-    systemctl start docker
-    docker stop Trojan-Go && docker rm Trojan-Go
-    docker stop V2Ray && docker rm V2Ray
-    docker stop WatchTower && docker rm WatchTower
-    docker stop Portainer && docker rm Portainer
+    uninstall_proxy_server
+    uninstall_watchtower
+    uninstall_portainer
     systemctl stop docker && systemctl disable docker
     if [[ "${ID}" == "centos" ]]; then
         ${INS} -y remove docker-ce docker-ce-cli containerd.io docker docker-client docker-client-latest docker-common docker-latest docker-latest-logrotate docker-logrotate docker-engine
     else
         ${INS} -y remove docker-ce docker-ce-cli containerd.io docker docker-engine docker.io containerd runc
     fi
-    rm -rf /var/lib/docker #Removes all docker data
+    #rm -rf /var/lib/docker #Removes all docker data
     rm -rf /etc/systemd/system/docker.service
+    uninstall_tsp
+    echo -e "${OK} ${GreenBG} 所有组件卸载完成，欢迎再次使用本脚本! ${Font}"
+    exit 0
+}
+
+uninstall_tsp() {
     systemctl stop tls-shunt-proxy && systemctl disable tls-shunt-proxy
     rm -rf /etc/systemd/system/tls-shunt-proxy.service
     rm -rf /usr/local/bin/tls-shunt-proxy
-    rm -rf $tsp_conf_dir $trojan_conf_dir $v2ray_conf_dir
-    echo -e "${GreenBG}  Done! ${Font}"
+    rm -rf $tsp_conf_dir
+    userdel -rf tls-shunt-proxy
+    tsp_stat="none"
+    echo -e "${OK} ${GreenBG} TLS-Shunt-Proxy 卸载完成！${Font}"
+    sleep 3
+}
+
+uninstall_proxy_server() {
+    uninstall_trojan
+    uninstall_v2ray
+    echo -e "${OK} ${GreenBG} 卸载（Trojan-Go/V2Ray）TCP/WS 代理完成！ ${Font}"
+    sleep 3
+}
+
+uninstall_trojan() {
+    rm -rf $trojan_conf_dir
+    trojan_ws_mode="none" && trojan_tcp_mode="none"
+    [ -f ${tsp_conf} ] && sed -i "/#Trojan_WS_Port/c \\        args: 127.0.0.1:40000 #Trojan_WS_Port:${trojan_ws_mode}" ${tsp_conf} &&
+        sed -i "/#Trojan_TCP_Port/c \\      args: 127.0.0.1:40001 #Trojan_TCP_Port:${trojan_tcp_mode}" ${tsp_conf}
+    systemctl start docker
+    [[ $trojan_stat = "installed" ]] && docker stop Trojan-Go && docker rm -f Trojan-Go &&
+        echo -e "${OK} ${GreenBG} 卸载 Trojan-Go TCP/WS 代理完成！ ${Font}"
+}
+
+uninstall_v2ray() {
+    rm -rf $v2ray_conf_dir
+    v2ray_ws_mode="none" && v2ray_tcp_mode="none"
+    [ -f ${tsp_conf} ] && sed -i "/#V2Ray_WS_Port/c \\        args: 127.0.0.1:40002;proxyProtocol #V2Ray_WS_Port:${v2ray_ws_mode}" ${tsp_conf} &&
+        sed -i "/#V2Ray_TCP_Port/c \\      args: 127.0.0.1:40003;proxyProtocol #V2Ray_TCP_Port:${v2ray_tcp_mode}" ${tsp_conf}
+    systemctl start docker
+    [[ $v2ray_stat = "installed" ]] && docker stop V2Ray && docker rm -f V2Ray &&
+        echo -e "${OK} ${GreenBG} 卸载 V2Ray TCP/WS 代理完成！ ${Font}"
+}
+uninstall_watchtower() {
+    docker stop WatchTower && docker rm -f WatchTower && watchtower_stat="none" &&
+        echo -e "${OK} ${GreenBG} 卸载 WatchTower 完成！ ${Font}"
+    sleep 3
+}
+
+uninstall_portainer() {
+    docker stop Portainer && docker rm -fv Portainer && portainer_stat="none" &&
+        echo -e "${OK} ${GreenBG} 卸载 Portainer 完成！ ${Font}"
+    sleep 3
 }
 
 upgrade_tsp() {
@@ -621,12 +765,12 @@ upgrade_tsp() {
     latest_version="$(wget --no-check-certificate -qO- https://api.github.com/repos/liberal-boy/tls-shunt-proxy/tags | grep 'name' | cut -d\" -f4 | head -1)"
     [[ -z ${latest_version} ]] && echo -e "${Error} 检测最新版本失败 ! ${Font}" && menu
     if [[ ${latest_version} != "${current_version}" ]]; then
-        echo -e "${OK} ${GreenBG} 当前版本: ${current_version} 最新版本: ${latest_version}，是否更新 [Y/N]?：${Font}"
+        echo -e "${OK} ${GreenBG} 当前版本: ${current_version} 最新版本: ${latest_version}，是否更新 (Y/N) [N]? ${Font}"
         read -r update_confirm
         [[ -z ${update_confirm} ]] && update_confirm="No"
         case $update_confirm in
         [yY][eE][sS] | [yY])
-            old_config_exist_check "${tsp_conf}"
+            config_exist_check "${tsp_conf}"
             bash <(curl -L -s https://raw.githubusercontent.com/liberal-boy/tls-shunt-proxy/master/dist/install.sh)
             judge "TLS-Shunt-Proxy 更新"
             systemctl daemon-reload && systemctl reset-failed
@@ -638,7 +782,6 @@ upgrade_tsp() {
     else
         echo -e "${OK} ${GreenBG} 当前 TLS-Shunt-Proxy 已经为最新版本 ${current_version} ${Font}"
     fi
-
 }
 
 update_sh() {
@@ -646,7 +789,9 @@ update_sh() {
     echo "$ol_version" >$version_cmp
     echo "$shell_version" >>$version_cmp
     if [[ "$shell_version" < "$(sort -rV $version_cmp | head -1)" ]]; then
-        echo -e "${OK} ${GreenBG} 存在新版本，是否更新 [Y/N]? ${Font}"
+        echo -e "${OK} ${GreenBG} 新版本更新内容：${Font}"
+        curl --silent https://api.github.com/repos/h31105/trojan_v2_docker_onekey/releases/latest | echo -e "${Yellow}$(jq -r .body)${Font}"
+        echo -e "${OK} ${GreenBG} 存在新版本 $version_cmp，是否更新 (Y/N) [N]? ${Font}"
         read -r update_confirm
         case $update_confirm in
         [yY][eE][sS] | [yY])
@@ -655,7 +800,6 @@ update_sh() {
             exit 0
             ;;
         *) ;;
-
         esac
     else
         echo -e "${OK} ${GreenBG} 当前版本为最新版本 ${Font}"
@@ -665,13 +809,20 @@ update_sh() {
 list() {
     case $1 in
     uninstall)
+        deployed_status_check
         uninstall_all
         ;;
     boost)
         bbr_boost_sh
         ;;
     sync)
+        deployed_status_check
         tsp_sync
+        ;;
+    debug)
+        debug="enable"
+        #set -xv
+        menu
         ;;
     *)
         menu
@@ -679,85 +830,306 @@ list() {
     esac
 }
 
-menu() {
+deployed_status_check() {
+    tsp_stat="none" && trojan_stat="none" && v2ray_stat="none" && watchtower_stat="none" && portainer_stat="none"
+    trojan_tcp_mode="none" && v2ray_tcp_mode="none" && trojan_ws_mode="none" && v2ray_ws_mode="none"
+
+    echo -e "${OK} ${GreenBG} 检测分流配置信息... ${Font}"
+    [[ -f ${tsp_conf} || -f '/usr/local/bin/tls-shunt-proxy' ]] &&
+        tsp_conf_current_version=$(grep '#TSP_CFG_Ver' ${tsp_conf} | sed -r 's/.*TSP_CFG_Ver:(.*) */\1/') && tsp_stat="installed" &&
+        TSP_Port=$(grep '#TSP_Port' ${tsp_conf} | sed -r 's/.*0:(.*) #.*/\1/') && TSP_Domain=$(grep '#TSP_Domain' ${tsp_conf} | sed -r 's/.*: (.*) #.*/\1/') &&
+        trojan_tcp_port=$(grep '#Trojan_TCP_Port' ${tsp_conf} | sed -r 's/.*:(.*) #.*/\1/') &&
+        trojan_tcp_mode=$(grep '#Trojan_TCP_Port' ${tsp_conf} | sed -r 's/.*Trojan_TCP_Port:(.*) */\1/') &&
+        trojan_ws_port=$(grep '#Trojan_WS_Port' ${tsp_conf} | sed -r 's/.*:(.*) #.*/\1/') &&
+        trojan_ws_mode=$(grep '#Trojan_WS_Port' ${tsp_conf} | sed -r 's/.*Trojan_WS_Port:(.*) */\1/') &&
+        trojan_ws_path=$(grep '#Trojan_WS_Path' ${tsp_conf} | sed -r 's/.*: (.*) #.*/\1/') &&
+        v2ray_tcp_port=$(grep '#V2Ray_TCP_Port' ${tsp_conf} | sed -r 's/.*:(.*);.*/\1/') &&
+        v2ray_tcp_mode=$(grep '#V2Ray_TCP_Port' ${tsp_conf} | sed -r 's/.*V2Ray_TCP_Port:(.*) */\1/') &&
+        v2ray_ws_port=$(grep '#V2Ray_WS_Port' ${tsp_conf} | sed -r 's/.*:(.*);.*/\1/') &&
+        v2ray_ws_mode=$(grep '#V2Ray_WS_Port' ${tsp_conf} | sed -r 's/.*V2Ray_WS_Port:(.*) */\1/') &&
+        v2ray_ws_path=$(grep '#V2Ray_WS_Path' ${tsp_conf} | sed -r 's/.*: (.*) #.*/\1/') &&
+        menu_req_check tls-shunt-proxy
+
+    echo -e "${OK} ${GreenBG} 检测组件部署状态... ${Font}"
+    systemctl is-active "docker" &>/dev/null && docker ps -a | grep Trojan-Go &>/dev/null && trojan_stat="installed"
+    systemctl is-active "docker" &>/dev/null && docker ps -a | grep V2Ray &>/dev/null && v2ray_stat="installed"
+    systemctl is-active "docker" &>/dev/null && docker ps -a | grep WatchTower &>/dev/null && watchtower_stat="installed"
+    systemctl is-active "docker" &>/dev/null && docker ps -a | grep Portainer &>/dev/null && portainer_stat="installed"
+
+    echo -e "${OK} ${GreenBG} 检测代理配置信息... ${Font}"
+    [[ -f ${trojan_conf} && $trojan_tcp_mode = true && $trojan_stat = "installed" ]] &&
+        tjport=$(grep '"local_port"' ${trojan_conf} | sed -r 's/.*: (.*),.*/\1/') &&
+        tjpassword=$(grep '"password"' ${trojan_conf} | awk -F '"' '{print $4}') &&
+        [[ $tjport != "$trojan_tcp_port" ]] && echo -e "${Error} ${RedBG} 检测到 Trojan-Go TCP 分流配置端口与实际监听端口不一致... ${Font}"
+
+    [[ -f ${trojan_conf} && $trojan_ws_mode = true && $trojan_stat = "installed" ]] &&
+        tjwspath=$(grep '"path":' ${trojan_conf} | awk -F '"' '{print $4}') &&
+        tjwshost=$(grep '"host":' ${trojan_conf} | awk -F '"' '{print $4}') &&
+        [[ $tjport != "$trojan_ws_port" ]] && echo -e "${Error} ${RedBG} 检测到 Trojan-Go WS 分流配置端口与实际监听端口不一致... ${Font}"
+
+    [[ -f ${v2ray_conf} && $v2ray_tcp_mode = "vmess" && $v2ray_stat = "installed" ]] &&
+        v2port=$(jq -r '[.inbounds[] | select(.protocol=="vmess") | select(.streamSettings.network=="tcp") | .port][0]' ${v2ray_conf}) &&
+        VMTID=$(jq -r '[.inbounds[] | select(.protocol=="vmess") | select(.streamSettings.network=="tcp") | .settings.clients[].id][0]' ${v2ray_conf}) &&
+        VMAID=$(jq -r '[.inbounds[] | select(.protocol=="vmess") | select(.streamSettings.network=="tcp") | .settings.clients[].alterId][0]' ${v2ray_conf})
+    [[ -f ${v2ray_conf} && $v2ray_tcp_mode = "vless" && $v2ray_stat = "installed" ]] &&
+        v2port=$(jq -r '[.inbounds[] | select(.protocol=="vless") | select(.streamSettings.network=="tcp") | .port][0]' ${v2ray_conf}) &&
+        VLTID=$(jq -r '[.inbounds[] | select(.protocol=="vless") | select(.streamSettings.network=="tcp") | .settings.clients[].id][0]' ${v2ray_conf})
+    [[ -f ${v2ray_conf} && $v2ray_ws_mode = "vmess" && $v2ray_stat = "installed" ]] &&
+        v2wsport=$(jq -r '[.inbounds[] | select(.protocol=="vmess") | select(.streamSettings.network=="ws") | .port][0]' ${v2ray_conf}) &&
+        v2wspath=$(jq -r '[.inbounds[] | select(.protocol=="vmess") | select(.streamSettings.network=="ws") | .streamSettings.wsSettings.path][0]' ${v2ray_conf}) &&
+        VMWSID=$(jq -r '[.inbounds[] | select(.protocol=="vmess") | select(.streamSettings.network=="ws") | .settings.clients[].id][0]' ${v2ray_conf}) &&
+        VMWSAID=$(jq -r '[.inbounds[] | select(.protocol=="vmess") | select(.streamSettings.network=="ws") | .settings.clients[].alterId][0]' ${v2ray_conf})
+    [[ -f ${v2ray_conf} && $v2ray_ws_mode = "vless" && $v2ray_stat = "installed" ]] &&
+        v2wsport=$(jq -r '[.inbounds[] | select(.protocol=="vless") | select(.streamSettings.network=="ws") | .port][0]' ${v2ray_conf}) &&
+        v2wspath=$(jq -r '[.inbounds[] | select(.protocol=="vless") | select(.streamSettings.network=="ws") | .streamSettings.wsSettings.path][0]' ${v2ray_conf}) &&
+        VLWSID=$(jq -r '[.inbounds[] | select(.protocol=="vless") | select(.streamSettings.network=="ws") | .settings.clients[].id][0]' ${v2ray_conf})
+
+    if [[ -f ${v2ray_conf} && $v2ray_stat = "installed" ]]; then
+        [[ $v2ray_tcp_mode = v*ess && $v2port != "$v2ray_tcp_port" ]] && echo -e "${Error} ${RedBG} 检测到 V2Ray TCP 分流端口配置异常 ${Font}"
+        [[ $v2ray_ws_mode = v*ess && $v2wsport != "$v2ray_ws_port" ]] && echo -e "${Error} ${RedBG} 检测到 V2Ray WS 分流端口配置异常 ${Font}"
+        [[ $v2ray_ws_mode = v*ess && $v2wspath != "$v2ray_ws_path" ]] && echo -e "${Error} ${RedBG} 检测到 V2Ray WS 路径分流配置异常 ${Font}"
+    fi
+
+    [[ -f ${trojan_conf} || -f ${v2ray_conf} || $trojan_stat = "installed" || $v2ray_stat = "installed" ]] && menu_req_check docker
+    [[ $trojan_stat = "installed" && ! -f $trojan_conf ]] && echo -e "\n${Error} ${RedBG} 检测到 Trojan-Go 代理配置异常，以下选项功能将被屏蔽，请尝试重装修复后重试... ${Font}" &&
+        echo -e "${WARN} ${Yellow}[屏蔽] Trojan-Go 配置修改${Font}"
+    [[ $v2ray_stat = "installed" && ! -f $v2ray_conf ]] && echo -e "\n${Error} ${RedBG} 检测到 V2Ray 代理配置异常，以下选项功能将被屏蔽，请尝试重装修复后重试... ${Font}" &&
+        echo -e "${WARN} ${Yellow}[屏蔽] V2Ray 配置修改${Font}"
+    [[ $tsp_conf_current_version != "${tsp_cfg_version}" ]] && echo -e "${WARN} ${Yellow}提醒: 检测到 TLS-Shunt-Proxy 配置为过时版本，请通过 卸载/安装 TLS-Shunt-Proxy 来完成新版本的配置适配 ${Font}"
+    [[ $debug = "enable" ]] && echo -e "\n Trojan-Go 代理：TCP：${Green}${trojan_tcp_mode}${Font} / WebSocket：${Green}${trojan_ws_mode}${Font}\n     V2Ray 代理：TCP：${Green}${v2ray_tcp_mode}${Font} / WebSocket：${Green}${v2ray_ws_mode}${Font}" &&
+        echo -e "\n 代理容器：Trojan-Go：${Green}${trojan_stat}${Font} / V2Ray：${Green}${v2ray_stat}${Font}" &&
+        echo -e " 其他容器：WatchTower：${Green}${watchtower_stat}${Font} / Portainer：${Green}${portainer_stat}${Font}"
+}
+
+info() {
+    deployed_status_check
+    echo -e "\n————————————————————分流配置信息————————————————————"
+    [ -f ${tsp_conf} ] && echo -e "TLS-Shunt-Proxy $(/usr/local/bin/tls-shunt-proxy --version 2>&1 | awk 'NR==1{gsub(/"/,"");print $3}')" &&
+        echo -e "服务器TLS端口: ${TSP_Port}" && echo -e "服务器TLS域名: ${TSP_Domain}"
+    [ -f ${tsp_conf} ] && [[ $trojan_tcp_mode = true ]] && echo -e "Trojan-Go TCP 分流端口: $trojan_tcp_port"
+    [ -f ${tsp_conf} ] && [[ $trojan_ws_mode = true ]] && echo -e "Trojan-Go WebSocket 分流端口: $trojan_ws_port" &&
+        echo -e "Trojan-Go WebSocket 分流路径: $trojan_ws_path"
+    [ -f ${tsp_conf} ] && [[ $v2ray_tcp_mode = v*ess ]] && echo -e "V2Ray TCP 分流端口: $v2ray_tcp_port"
+    [ -f ${tsp_conf} ] && [[ $v2ray_ws_mode = v*ess ]] && echo -e "V2Ray WebSocket 分流端口: $v2ray_ws_port" &&
+        echo -e "V2Ray WebSocket 分流路径: $v2ray_ws_path"
+
+    [[ -f ${trojan_conf} && $trojan_stat = "installed" ]] && echo -e "—————————————————— Trojan-Go 配置 ——————————————————" &&
+        echo -e "$(docker exec Trojan-Go sh -c 'trojan-go --version' 2>&1 | awk 'NR==1{gsub(/"/,"");print}')"
+
+    [[ -f ${trojan_conf} && $trojan_tcp_mode = true && $trojan_stat = "installed" ]] &&
+        echo -e "Trojan-Go 监听端口: $tjport" && echo -e "Trojan-Go 密码: ${tjpassword}"
+    [[ -f ${trojan_conf} && $trojan_ws_mode = true && $trojan_stat = "installed" ]] &&
+        echo -e "Trojan-Go WebSocket Path: ${tjwspath}" && echo -e "Trojan-Go WebSocket Host: ${tjwshost}"
+
+    [[ -f ${trojan_conf} && $trojan_tcp_mode = true && $trojan_stat = "installed" ]] && echo -e "\n Trojan-Go TCP TLS 分享链接：" &&
+        echo -e " （通用）格式：\n trojan://${tjpassword}@${TSP_Domain}:${TSP_Port}?sni=${TSP_Domain}&peer=${TSP_Domain}&allowinsecure=0&mux=0#${HOSTNAME}-TCP" &&
+        echo -e " （Qv2Ray）格式：\n trojan-go://${tjpassword}@${TSP_Domain}:${TSP_Port}/?sni=${TSP_Domain}&type=original&host=${TSP_Domain}#${HOSTNAME}-TCP" &&
+        echo -e " （通用格式二维码）：" &&
+        qrencode -t utf8 -s 1 "trojan://${tjpassword}@${TSP_Domain}:${TSP_Port}?sni=${TSP_Domain}&peer=${TSP_Domain}&allowinsecure=0&mux=0#${HOSTNAME}-TCP"
+
+    [[ -f ${trojan_conf} && $trojan_ws_mode = true && $trojan_stat = "installed" ]] && echo -e "\n Trojan-Go WebSocket TLS 分享链接：" &&
+        echo -e " （Trojan-Qt5）格式：\n trojan://${tjpassword}@${TSP_Domain}:${TSP_Port}?sni=${TSP_Domain}&peer=${TSP_Domain}&allowinsecure=0&mux=1&ws=1&wspath=${tjwspath}&wshost=${TSP_Domain}#${HOSTNAME}-WS" &&
+        echo -e " （Qv2Ray）格式：\n trojan-go://${tjpassword}@${TSP_Domain}:${TSP_Port}/?sni=${TSP_Domain}&type=ws&host=${TSP_Domain}&path=${tjwspath}#${HOSTNAME}-WS" &&
+        echo -e " （Shadowrocket格式二维码）：" &&
+        qrencode -t utf8 -s 1 "trojan://${tjpassword}@${TSP_Domain}:${TSP_Port}?peer=${TSP_Domain}&mux=1&plugin=obfs-local;obfs=websocket;obfs-host=${TSP_Domain};obfs-uri=${tjwspath}#${HOSTNAME}-WS"
+
+    [[ -f ${v2ray_conf} && $v2ray_stat = "installed" ]] && echo -e "\n———————————————————— V2Ray 配置 ————————————————————" &&
+        echo -e "$(docker exec V2Ray sh -c 'v2ray --version' 2>&1 | awk 'NR==1{gsub(/"/,"");print}')"
+
+    [[ -f ${v2ray_conf} && $v2ray_tcp_mode = "vmess" && $v2ray_stat = "installed" ]] &&
+        echo -e "VMess TCP 监听端口: $v2port" && echo -e "VMess TCP UUID: ${VMTID}" &&
+        echo -e "VMess AlterID: ${VMAID}" && echo -e "VMess 加密方式: Auto" && echo -e "VMess Host: ${TSP_Domain}"
+
+    [[ -f ${v2ray_conf} && $v2ray_tcp_mode = "vless" && $v2ray_stat = "installed" ]] &&
+        echo -e "VLESS TCP 监听端口: $v2port" && echo -e "VLESS TCP UUID: ${VLTID}" &&
+        echo -e "VLESS 加密方式: none" && echo -e "VLESS Host: ${TSP_Domain}"
+
+    [[ -f ${v2ray_conf} && $v2ray_ws_mode = "vmess" && $v2ray_stat = "installed" ]] &&
+        echo -e "VMess WS 监听端口: $v2wsport" && echo -e "VMess WS UUID: ${VMWSID}" && echo -e "VMess AlterID: $VMWSAID" &&
+        echo -e "VMess 加密方式: Auto" && echo -e "VMess WebSocket Host: ${TSP_Domain}" && echo -e "VMess WebSocket Path: ${v2wspath}"
+
+    [[ -f ${v2ray_conf} && $v2ray_ws_mode = "vless" && $v2ray_stat = "installed" ]] &&
+        echo -e "VLESS WS 监听端口: $v2wsport" && echo -e "VLESS WS UUID: ${VLWSID}" &&
+        echo -e "VLESS 加密方式: none" && echo -e "VLESS WebSocket Host: ${TSP_Domain}" && echo -e "VLESS WebSocket Path: ${v2wspath}"
+
+    [[ -f ${v2ray_conf} && $v2ray_tcp_mode = "vmess" && $v2ray_stat = "installed" ]] && echo -e "\n VMess TCP TLS 分享链接：" &&
+        echo -e " （V2RayN 格式）：\n vmess://$(echo "{\"add\":\"${TSP_Domain}\",\"aid\":\"6\",\"host\":\"${TSP_Domain}\",\"peer\":\"${TSP_Domain}\",\"id\":\"${VMTID}\",\"net\":\"tcp\",\"port\":\"${TSP_Port}\",\"ps\":\"${HOSTNAME}-TCP\",\"tls\":\"tls\",\"type\":\"none\",\"v\":\"2\"}" | base64 -w 0)" &&
+        echo -e " （Shadowrocket格式二维码）：" &&
+        qrencode -t utf8 -s 1 "vmess://$(echo "auto:${VMTID}@${TSP_Domain}:${TSP_Port}" | base64 -w 0)?tls=1&mux=1&peer=${TSP_Domain}&allowInsecure=0&tfo=0&remarks=${HOSTNAME}-TCP"
+
+    [[ -f ${v2ray_conf} && $v2ray_ws_mode = "vmess" && $v2ray_stat = "installed" ]] && echo -e "\n VMess WebSocket TLS 分享链接：" &&
+        echo -e " （V2RayN 格式）：\n vmess://$(echo "{\"add\":\"${TSP_Domain}\",\"aid\":\"6\",\"host\":\"${TSP_Domain}\",\"peer\":\"${TSP_Domain}\",\"id\":\"${VMWSID}\",\"net\":\"ws\",\"path\":\"${v2wspath}\",\"port\":\"${TSP_Port}\",\"ps\":\"${HOSTNAME}-WS\",\"tls\":\"tls\",\"type\":\"none\",\"v\":\"2\"}" | base64 -w 0)" &&
+        echo -e " （Shadowrocket格式二维码）：" &&
+        qrencode -t utf8 -s 1 "vmess://$(echo "auto:${VMWSID}@${TSP_Domain}:${TSP_Port}" | base64 -w 0)?tls=1&mux=1&peer=${TSP_Domain}&allowInsecure=0&tfo=0&remarks=${HOSTNAME}-WS&obfs=websocket&obfsParam=${TSP_Domain}&path=${v2wspath}"
+
+    [[ -f ${v2ray_conf} && $v2ray_tcp_mode = "vless" && $v2ray_stat = "installed" ]] && echo -e "\n VLESS TCP TLS 分享链接："
+
+    [[ -f ${v2ray_conf} && $v2ray_ws_mode = "vless" && $v2ray_stat = "installed" ]] && echo -e "\n VLESS WebSocket TLS 分享链接："
+
+    echo -e "\n————————————————————————————————————————————————————\n"
+    read -t 60 -n 1 -s -rp "按任意键继续（60s）..."
     clear
-    echo -e "${Green} TSP / TROJAN-GO / V2RAY 容器化部署脚本 版本: ${shell_version} ${Font}\n"
+}
+
+menu_req_check() {
+    if systemctl is-active "$1" &>/dev/null; then
+        [[ $debug = "enable" ]] && echo -e "${OK} ${GreenBG} $1 已经启动 ${Font}"
+    else
+        echo -e "\n${Error} ${RedBG} 检测到 $1 服务未启动，根据依赖关系，以下选项将被屏蔽，请修复后再试... ${Font}"
+        [[ $1 = "tls-shunt-proxy" ]] && echo -e "${WARN} ${Yellow}[屏蔽] 安装（Trojan-Go/V2Ray）TCP/WS 代理\n[屏蔽] （Trojan-Go/V2Ray）配置修改 / 查看配置信息${Font}"
+        [[ $1 = "docker" ]] && echo -e "${WARN} ${Yellow}[屏蔽] 安装/卸载 WatchTower（自动更新容器）\n[屏蔽] 安装/卸载 Portainer（Web管理容器）${Font}"
+        read -t 60 -n 1 -s -rp "按任意键继续（60s）..."
+    fi
+}
+
+menu() {
+    deployed_status_check
+    echo -e "\n${Green}  TSP & Trojan-Go/V2Ray 容器化部署脚本 版本: ${shell_version} ${Font}\n"
     echo -e "——————————————————————部署管理——————————————————————"
-    echo -e "${Green}1.${Font}  安装 TLS-Shunt-Proxy（网站伪装 & 证书自动管理）"
-    echo -e "${Green}2.${Font}  安装 Trojan-Go / V2Ray WS (科学上网) "
-    echo -e "${Green}3.${Font}  添加 WatchTower（容器自动更新）"
-    echo -e "${Green}4.${Font}  添加 Portainer（容器管理 WebUI）"
-    echo -e "——————————————————————配置修改——————————————————————"
-    echo -e "${Green}5.${Font}  修改 Troan-Go 配置"
-    echo -e "${Green}6.${Font}  修改 V2Ray WS 配置"
-    echo -e "${Green}7.${Font}  修改 TLS 端口 / 域名"
-    echo -e "——————————————————————查看信息——————————————————————"
-    echo -e "${Green}8.${Font}  查看 Trojan-Go / V2Ray 配置信息"
+    if [[ $tsp_stat = "installed" ]]; then
+        echo -e "${Green}1.${Font}  ${Yellow}卸载${Font} TLS-Shunt-Proxy（网站&自动管理证书）"
+    else
+        echo -e "${Green}1.${Font}  安装 TLS-Shunt-Proxy（网站&自动管理证书）"
+    fi
+    systemctl is-active "tls-shunt-proxy" &>/dev/null &&
+        if [[ $trojan_stat = "none" ]]; then
+            echo -e "${Green}2.${Font}  安装 Trojan-Go TCP/WS 代理（容器）"
+        else
+            echo -e "${Green}2.${Font}  ${Yellow}卸载${Font} Trojan-Go TCP/WS 代理（容器）"
+        fi
+    systemctl is-active "tls-shunt-proxy" &>/dev/null &&
+        if [[ $v2ray_stat = "none" ]]; then
+            echo -e "${Green}3.${Font}  安装 V2Ray TCP/WS 代理（容器）"
+        else
+            echo -e "${Green}3.${Font}  ${Yellow}卸载${Font} V2Ray TCP/WS 代理（容器）"
+        fi
+    systemctl is-active "docker" &>/dev/null &&
+        if [[ $watchtower_stat = "none" ]]; then
+            echo -e "${Green}4.${Font}  安装 WatchTower（自动更新容器）"
+        else
+            echo -e "${Green}4.${Font}  ${Yellow}卸载${Font} WatchTower（自动更新容器）"
+        fi
+    systemctl is-active "docker" &>/dev/null &&
+        if [[ $portainer_stat = "none" ]]; then
+            echo -e "${Green}5.${Font}  安装 Portainer（Web管理容器）"
+        else
+            echo -e "${Green}5.${Font}  ${Yellow}卸载${Font} Portainer（Web管理容器）"
+        fi
+    systemctl is-active "tls-shunt-proxy" &>/dev/null &&
+        echo -e "——————————————————————配置修改——————————————————————" &&
+        echo -e "${Green}6.${Font}  修改 TLS 端口/域名" &&
+        [[ $trojan_stat = "installed" && -f ${trojan_conf} ]] && echo -e "${Green}7.${Font}  修改 Trojan-Go 代理配置"
+    systemctl is-active "tls-shunt-proxy" &>/dev/null &&
+        [[ $v2ray_stat = "installed" && -f ${v2ray_conf} ]] && echo -e "${Green}8.${Font}  修改 V2Ray 代理配置"
+    systemctl is-active "tls-shunt-proxy" &>/dev/null &&
+        echo -e "——————————————————————查看信息——————————————————————" &&
+        echo -e "${Green}9.${Font}  查看配置信息"
     echo -e "——————————————————————杂项管理——————————————————————"
-    echo -e "${Green}9.${Font}  安装 4合1 BBR 锐速脚本"
-    echo -e "${Green}10.${Font} 升级 Docker / TLS-Shunt-Proxy"
-    echo -e "${Green}11.${Font} 卸载 已安装的组件"
+    [ -f ${tsp_conf} ] && echo -e "${Green}10.${Font} 升级 TLS-Shunt-Proxy/Docker 基础平台" &&
+        echo -e "${Green}11.${Font} ${Yellow}卸载${Font} 已安装的所有组件"
+    echo -e "${Green}12.${Font} 安装 4合1 BBR 锐速脚本"
     echo -e "${Green}0.${Font}  退出脚本 "
     echo -e "————————————————————————————————————————————————————\n"
     read -rp "请输入数字：" menu_num
     case "$menu_num" in
     1)
-        install_tls_shunt_proxy
-        info
+        if [[ $tsp_stat = "installed" ]]; then
+            uninstall_tsp
+        else
+            install_tls_shunt_proxy
+            tsp_sync
+        fi
         ;;
     2)
-        install_trojan_v2ray
-        info
+        systemctl is-active "tls-shunt-proxy" &>/dev/null &&
+            if [[ $trojan_stat = "none" ]]; then
+                install_trojan
+            else
+                uninstall_trojan
+            fi
         ;;
     3)
-        install_watchtower
+        systemctl is-active "tls-shunt-proxy" &>/dev/null &&
+            if [[ $v2ray_stat = "none" ]]; then
+                install_v2ray
+            else
+                uninstall_v2ray
+            fi
         ;;
     4)
-        install_portainer
+        systemctl is-active "docker" &>/dev/null &&
+            if [[ $watchtower_stat = "none" ]]; then
+                install_watchtower
+            else
+                uninstall_watchtower
+            fi
         ;;
     5)
-        trojan_reset
-        docker restart Trojan-Go
-        judge "Trojan-Go 应用新配置"
-        info
+        systemctl is-active "docker" &>/dev/null &&
+            if [[ $portainer_stat = "none" ]]; then
+                install_portainer
+            else
+                uninstall_portainer
+            fi
         ;;
     6)
-        v2ray_reset
-        docker restart V2Ray
-        judge "V2Ray 应用新配置"
-        info
+        systemctl is-active "tls-shunt-proxy" &>/dev/null && modify_tsp
         ;;
     7)
-        domain_port_check
-        sed -i "/#TSP_Port/c \\listen: 0.0.0.0:${tspport} #TSP_Port" ${tsp_conf}
-        sed -i "/#TSP_Domain/c \\  - name: ${domain} #TSP_Domain" ${tsp_conf}
-        tsp_sync
-        info
+        systemctl is-active "tls-shunt-proxy" &>/dev/null && [[ -f ${trojan_conf} && $trojan_stat = "installed" ]] && modify_trojan
         ;;
     8)
-        info
+        systemctl is-active "tls-shunt-proxy" &>/dev/null && [[ -f ${v2ray_conf} && $v2ray_stat = "installed" ]] && modify_v2ray
         ;;
     9)
-        bbr_boost_sh
+        systemctl is-active "tls-shunt-proxy" &>/dev/null && info
         ;;
     10)
-        echo -e "${GreenBG} 开始检测 Docker 最新版本（请不要中断）... ${Font}"
-        install_docker
-        upgrade_tsp
-        info
+        [ -f ${tsp_conf} ] && read -rp "请确认是否升级 TLS-Shunt-Proxy 分流组件，(Y/N) [N]:" upgrade_mode
+        [[ -z ${upgrade_mode} ]] && upgrade_mode="none"
+        case $upgrade_mode in
+        [yY])
+            echo -e "${GreenBG} 开始升级 TLS-Shunt-Proxy 分流组件 ${Font}"
+            upgrade_mode="Tsp"
+            sleep 1
+            upgrade_tsp
+            ;;
+        *)
+            echo -e "${GreenBG} 跳过升级 TLS-Shunt-Proxy 分流组件 ${Font}"
+            ;;
+        esac
+        [ -f ${tsp_conf} ] && read -rp "请确认是否升级 Docker 平台组件，(Y/N) [N]:" upgrade_mode
+        [[ -z ${upgrade_mode} ]] && upgrade_mode="none"
+        case $upgrade_mode in
+        [yY])
+            echo -e "${GreenBG} 开始升级 Docker 平台组件 ${Font}"
+            upgrade_mode="Docker"
+            sleep 1
+            install_docker
+            ;;
+        *)
+            echo -e "${GreenBG} 跳过升级 Docker 平台组件 ${Font}"
+            ;;
+        esac
         ;;
     11)
-        uninstall_all
+        [ -f ${tsp_conf} ] && uninstall_all
+        ;;
+    12)
+        bbr_boost_sh
         ;;
     0)
         exit 0
         ;;
     *)
-        echo -e "${RedBG}请输入正确的数字${Font}"
+        echo -e "${RedBG} 请输入正确的数字 ${Font}"
+        sleep 3
         ;;
     esac
     menu
 }
 
+clear
+is_root
 update_sh
 list "$1"
