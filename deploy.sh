@@ -789,9 +789,9 @@ update_sh() {
     echo "$ol_version" >$version_cmp
     echo "$shell_version" >>$version_cmp
     if [[ "$shell_version" < "$(sort -rV $version_cmp | head -1)" ]]; then
-        echo -e "${OK} ${GreenBG} 新版本更新内容：${Font}"
+        echo -e "${OK} ${GreenBG} 更新内容：${Font}"
         curl --silent https://api.github.com/repos/h31105/trojan_v2_docker_onekey/releases/latest | echo -e "${Yellow}$(jq -r .body)${Font}"
-        echo -e "${OK} ${GreenBG} 存在新版本 $version_cmp，是否更新 (Y/N) [N]? ${Font}"
+        echo -e "${OK} ${GreenBG} 存在新版本，是否更新 (Y/N) [N]? ${Font}"
         read -r update_confirm
         case $update_confirm in
         [yY][eE][sS] | [yY])
