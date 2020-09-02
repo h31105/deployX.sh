@@ -591,7 +591,7 @@ tsp_sync() {
         judge "检测 Trojan-Go 配置"
         [[ -z $tjport ]] && trojan_tcp_mode=false
         [[ $trojan_ws_mode = null ]] && trojan_ws_mode=false
-        [[ -z $tjwspath ]] && tjwspath=none
+        [[ -z $tjwspath ]] && tjwspath=/trojan/none
         echo -e "检测到：Trojan-Go 代理：TCP：${Green}${trojan_tcp_mode}${Font} / WebSocket：${Green}${trojan_ws_mode}${Font} / 端口：${Green}${tjport}${Font} / WebSocket Path：${Green}${tjwspath}${Font}"
     fi
 
@@ -603,11 +603,11 @@ tsp_sync() {
             v2ray_ws_mode="$(jq -r '[.inbounds[] | select(.streamSettings.network=="ws") | .protocol][0]' ${v2ray_conf})" &&
             v2wspath="$(jq -r '[.inbounds[] | select(.streamSettings.network=="ws") | .streamSettings.wsSettings.path][0]' ${v2ray_conf})"
         judge "检测 V2Ray 配置"
-        [[ $v2port = null ]] && v2port=none
-        [[ $v2wsport = null ]] && v2wsport=none
+        [[ $v2port = null ]] && v2port=40003
+        [[ $v2wsport = null ]] && v2wsport=40002
         [[ $v2ray_tcp_mode = null ]] && v2ray_tcp_mode=none
         [[ $v2ray_ws_mode = null ]] && v2ray_ws_mode=none
-        [[ $v2wspath = null ]] && v2wspath=none
+        [[ $v2wspath = null ]] && v2wspath=/v2ray/none
         echo -e "检测到：V2Ray 代理：TCP：${Green}${v2ray_tcp_mode}${Font} 端口：${Green}${v2port}${Font} / WebSocket：${Green}${v2ray_ws_mode}${Font} 端口：${Green}${v2wsport}${Font} / WebSocket Path：${Green}${v2wspath}${Font}"
     fi
 
@@ -615,8 +615,8 @@ tsp_sync() {
         [[ -z $tjport ]] && tjport=40001
         [[ -z $v2port ]] && v2port=40003
         [[ -z $v2wsport ]] && v2wsport=40002
-        [[ -z $tjwspath ]] && tjwspath=/trojan/${camouflage}
-        [[ -z $v2wspath ]] && v2wspath=/v2ray/${camouflage}
+        [[ -z $tjwspath ]] && tjwspath=/trojan/none
+        [[ -z $v2wspath ]] && v2wspath=/v2ray/none
         sed -i "/#Trojan_TCP_Port/c \\      args: 127.0.0.1:${tjport} #Trojan_TCP_Port:${trojan_tcp_mode}" ${tsp_conf} && sed -i "/#Trojan_WS_Port/c \\        args: 127.0.0.1:${tjport} #Trojan_WS_Port:${trojan_ws_mode}" ${tsp_conf} &&
             sed -i "/#Trojan_WS_Path/c \\      - path: ${tjwspath} #Trojan_WS_Path" ${tsp_conf}
         sed -i "/#V2Ray_TCP_Port/c \\      args: 127.0.0.1:${v2port};proxyProtocol #V2Ray_TCP_Port:${v2ray_tcp_mode}" ${tsp_conf} && sed -i "/#V2Ray_WS_Port/c \\        args: 127.0.0.1:${v2wsport};proxyProtocol #V2Ray_WS_Port:${v2ray_ws_mode}" ${tsp_conf} &&
@@ -911,7 +911,7 @@ deployed_status_check() {
             uninstall_tsp
             install_tls_shunt_proxy
             tsp_sync
-	    deployed_status_check
+            deployed_status_check
             ;;
         *) ;;
         esac
