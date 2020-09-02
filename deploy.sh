@@ -589,7 +589,7 @@ tsp_sync() {
         tjport="$(grep '"local_port"' ${trojan_conf} | sed -r 's/.*: (.*),.*/\1/')" && trojan_tcp_mode=true &&
             tjwspath="$(grep '"path":' ${trojan_conf} | awk -F '"' '{print $4}')" && trojan_ws_mode="$(jq -r '.websocket.enabled' ${trojan_conf})"
         judge "检测 Trojan-Go 配置"
-        [[ -z $tjport ]] && trojan_tcp_mode=false
+        [[ -z $tjport ]] && trojan_tcp_mode=false && tjport=40001
         [[ $trojan_ws_mode = null ]] && trojan_ws_mode=false
         [[ -z $tjwspath ]] && tjwspath=none
         echo -e "检测到：Trojan-Go 代理：TCP：${Green}${trojan_tcp_mode}${Font} / WebSocket：${Green}${trojan_ws_mode}${Font} / 端口：${Green}${tjport}${Font} / WebSocket Path：${Green}${tjwspath}${Font}"
@@ -603,8 +603,8 @@ tsp_sync() {
             v2ray_ws_mode="$(jq -r '[.inbounds[] | select(.streamSettings.network=="ws") | .protocol][0]' ${v2ray_conf})" &&
             v2wspath="$(jq -r '[.inbounds[] | select(.streamSettings.network=="ws") | .streamSettings.wsSettings.path][0]' ${v2ray_conf})"
         judge "检测 V2Ray 配置"
-        [[ $v2port = null ]] && v2port=none
-        [[ $v2wsport = null ]] && v2wsport=none
+        [[ $v2port = null ]] && v2port=40003
+        [[ $v2wsport = null ]] && v2wsport=40002
         [[ $v2ray_tcp_mode = null ]] && v2ray_tcp_mode=none
         [[ $v2ray_ws_mode = null ]] && v2ray_ws_mode=none
         [[ $v2wspath = null ]] && v2wspath=none
