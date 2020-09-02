@@ -1,10 +1,10 @@
-    # trojan_v2_docker_onekey
-    ## 基于 Docker 容器架构的 Trojan-Go/VLESS/VMess TLS 部署脚本
-    ### 本方案采用 TSP 进行 TLS 前置分流，后端使用 Trojan-Go、V2Ray 容器与 WatchTower、Portainer 维护组件配合，
-        实现快速部署、易用易维护的极致体验。
+    trojan_v2_docker_onekey
+    基于 Docker 容器架构的 Trojan-Go/VLESS/VMess TLS 部署脚本
+    本方案采用 TSP 进行 TLS 前置分流，后端使用 Trojan-Go、V2Ray 容器与 WatchTower、Portainer 维护组件配合，实现快速部署、
+    易用易维护的极致体验。
 
-    提醒：由于 1.10 版本改动较多，使用 1.00 以前版本脚本部署的环境，与新版脚本存在配置兼容性问题；请在脚本升级后，
-    根据提示重新安装 TLS-Shunt-Proxy 来完成新版本的配置适配。
+    提醒：由于 1.10 版本改动较多，使用 1.00 以前版本脚本部署的环境，与新版脚本存在配置兼容性问题；请在脚本升级后，根据提示
+    重新安装 TLS-Shunt-Proxy 来完成新版本的配置适配。
 
     更新内容详见 Release 页面
 
@@ -53,8 +53,8 @@ chmod +x deploy.sh && bash deploy.sh
     Trojan-Go ： /etc/trojan-go/config.json
     V2ray : /etc/v2ray/config.json
 
-    ## 本脚本最初基于 wulabing 大佬的优质脚本 V2Ray_ws-tls_bash_onekey 改写而成，
-    脚本中使用的Docker镜像来自于 秋水逸冰（Teddysun），在此感谢！
+    ## 本脚本最初基于 wulabing 大佬的优质脚本 V2Ray_ws-tls_bash_onekey 改写而成，脚本中使用的Docker镜像来自于
+    秋水逸冰（Teddysun），在此感谢！
 
     其他参考：
     # https://github.com/wulabing/V2Ray_ws-tls_bash_onekey
