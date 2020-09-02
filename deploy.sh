@@ -58,8 +58,8 @@ WARN="${Yellow}[警告]${Font}"
 Error="${Red}[错误]${Font}"
 
 #版本、初始化变量
-shell_version="1.12"
-tsp_cfg_version="0.63"
+shell_version="1.13"
+tsp_cfg_version="0.64"
 upgrade_mode="none"
 github_branch="master"
 version_cmp="/tmp/version_cmp.tmp"
@@ -129,14 +129,14 @@ judge() {
 
 chrony_install() {
     ${INS} -y install chrony
-    judge "安装 chrony 时间同步服务 "
+    judge "安装 chrony 时间同步服务"
     timedatectl set-ntp true
     if [[ "${ID}" == "centos" ]]; then
         systemctl enable chronyd && systemctl restart chronyd
     else
         systemctl enable chrony && systemctl restart chrony
     fi
-    judge "chronyd 启动 "
+    judge "chronyd 启动"
     timedatectl set-timezone Asia/Shanghai
     echo -e "${OK} ${GreenBG} 等待时间同步 ${Font}"
     sleep 10
@@ -357,15 +357,15 @@ v2ray_mode_type() {
     [[ -z ${v2ray_tcp_mode} ]] && v2ray_tcp_mode="none"
     case $v2ray_tcp_mode in
     [mM])
-        echo -e "${GreenBG} 选择 VMess TCP 模式 ${Font}"
+        echo -e "${GreenBG} 已选择 TCP 模式协议 VMess ${Font}"
         v2ray_tcp_mode="vmess"
         ;;
     [lL])
-        echo -e "${GreenBG} 选择 VLESS TCP 模式 ${Font}"
+        echo -e "${GreenBG} 已选择 TCP 模式协议 VLESS ${Font}"
         v2ray_tcp_mode="vless"
         ;;
     none)
-        echo -e "${GreenBG} 跳过 TCP 模式 ${Font}"
+        echo -e "${GreenBG} 跳过 TCP 模式 部署 ${Font}"
         v2ray_tcp_mode="none"
         ;;
     *)
@@ -376,15 +376,15 @@ v2ray_mode_type() {
     [[ -z ${v2ray_ws_mode} ]] && v2ray_ws_mode="none"
     case $v2ray_ws_mode in
     [mM])
-        echo -e "${GreenBG} 选择 VMess WS 模式 ${Font}"
+        echo -e "${GreenBG} 已选择 WS 模式 VMess ${Font}"
         v2ray_ws_mode="vmess"
         ;;
     [lL])
-        echo -e "${GreenBG} 选择 VLESS WS 模式 ${Font}"
+        echo -e "${GreenBG} 已选择 WS 模式 VLESS ${Font}"
         v2ray_ws_mode="vless"
         ;;
     none)
-        echo -e "${GreenBG} 跳过 WS 模式 ${Font}"
+        echo -e "${GreenBG} 跳过 WS 模式 部署 ${Font}"
         v2ray_ws_mode="none"
         ;;
     *)
@@ -535,7 +535,7 @@ install_docker() {
     judge "安装 Docker "
     systemctl daemon-reload
     systemctl enable docker && systemctl restart docker
-    judge "Docker 启动 "
+    judge "Docker 启动"
 }
 
 install_tsp() {
@@ -570,7 +570,7 @@ vhosts: #TSP_CFG_Ver:${tsp_cfg_version}
       args: 127.0.0.1:40003;proxyProtocol #V2Ray_TCP_Port:${v2ray_tcp_mode}
 EOF
     judge "安装 TLS-Shunt-Proxy"
-    systemctl daemon-reload
+    systemctl daemon-reload && systemctl reset-failed
     systemctl enable tls-shunt-proxy && systemctl restart tls-shunt-proxy
     judge "TLS-Shunt-Proxy 启动"
 }
@@ -612,17 +612,18 @@ tsp_sync() {
     fi
 
     if [[ -f ${tsp_conf} ]]; then
-    	[[ -z $tjport ]] && tjport=40001
+        [[ -z $tjport ]] && tjport=40001
         [[ -z $v2port ]] && v2port=40003
         [[ -z $v2wsport ]] && v2wsport=40002
-	[[ -z $tjwspath ]] && tjwspath=/trojan/${camouflage}
-	[[ -z $v2wspath ]] && v2wspath=/v2ray/${camouflage}
+        [[ -z $tjwspath ]] && tjwspath=/trojan/${camouflage}
+        [[ -z $v2wspath ]] && v2wspath=/v2ray/${camouflage}
         sed -i "/#Trojan_TCP_Port/c \\      args: 127.0.0.1:${tjport} #Trojan_TCP_Port:${trojan_tcp_mode}" ${tsp_conf} && sed -i "/#Trojan_WS_Port/c \\        args: 127.0.0.1:${tjport} #Trojan_WS_Port:${trojan_ws_mode}" ${tsp_conf} &&
             sed -i "/#Trojan_WS_Path/c \\      - path: ${tjwspath} #Trojan_WS_Path" ${tsp_conf}
         sed -i "/#V2Ray_TCP_Port/c \\      args: 127.0.0.1:${v2port};proxyProtocol #V2Ray_TCP_Port:${v2ray_tcp_mode}" ${tsp_conf} && sed -i "/#V2Ray_WS_Port/c \\        args: 127.0.0.1:${v2wsport};proxyProtocol #V2Ray_WS_Port:${v2ray_ws_mode}" ${tsp_conf} &&
             sed -i "/#V2Ray_WS_Path/c \\      - path: ${v2wspath} #V2Ray_WS_Path" ${tsp_conf}
         systemctl restart tls-shunt-proxy
-        judge "TLS-Shunt-Proxy 同步配置 "
+        judge "TLS-Shunt-Proxy 同步配置"
+        menu_req_check tls-shunt-proxy
     else
         echo -e "${Error} ${RedBG} TLS-Shunt-Proxy 配置异常，请重新安装后再试 ${Font}"
         exit 4
@@ -673,8 +674,8 @@ install_tls_shunt_proxy() {
     basic_optimization
     domain_port_check
     port_exist_check "${tspport}"
-    config_exist_check "${tsp_conf}"
     port_exist_check 80
+    config_exist_check "${tsp_conf}"
     web_camouflage
     install_tsp
 }
@@ -900,7 +901,21 @@ deployed_status_check() {
         echo -e "${WARN} ${Yellow}[屏蔽] Trojan-Go 配置修改${Font}"
     [[ $v2ray_stat = "installed" && ! -f $v2ray_conf ]] && echo -e "\n${Error} ${RedBG} 检测到 V2Ray 代理配置异常，以下选项功能将被屏蔽，请尝试重装修复后重试... ${Font}" &&
         echo -e "${WARN} ${Yellow}[屏蔽] V2Ray 配置修改${Font}"
-    [[ $tsp_stat = "installed" && $tsp_conf_current_version != "${tsp_cfg_version}" ]] && echo -e "${WARN} ${Yellow}提醒: 检测到 TLS-Shunt-Proxy 配置为过时版本，请通过 卸载/安装 TLS-Shunt-Proxy 来完成新版本的配置适配 ${Font}"
+
+    if [[ $tsp_stat = "installed" && $tsp_conf_current_version != "${tsp_cfg_version}" ]]; then
+        echo -e "${WARN} ${Yellow}检测到 TLS-Shunt-Proxy 存在关键更新，为确保脚本正常运行，请确认立即执行更新操作（Y/N）[Y] ${Font}"
+        read -r upgrade_confirm
+        [[ -z ${upgrade_confirm} ]] && upgrade_confirm="Yes"
+        case $upgrade_confirm in
+        [yY][eE][sS] | [yY])
+            uninstall_tsp
+            install_tls_shunt_proxy
+            tsp_sync
+            ;;
+        *) ;;
+        esac
+    fi
+
     [[ $debug = "enable" ]] && echo -e "\n Trojan-Go 代理：TCP：${Green}${trojan_tcp_mode}${Font} / WebSocket：${Green}${trojan_ws_mode}${Font}\n     V2Ray 代理：TCP：${Green}${v2ray_tcp_mode}${Font} / WebSocket：${Green}${v2ray_ws_mode}${Font}" &&
         echo -e "\n 代理容器：Trojan-Go：${Green}${trojan_stat}${Font} / V2Ray：${Green}${v2ray_stat}${Font}" &&
         echo -e " 其他容器：WatchTower：${Green}${watchtower_stat}${Font} / Portainer：${Green}${portainer_stat}${Font}"
@@ -980,9 +995,9 @@ menu_req_check() {
     if systemctl is-active "$1" &>/dev/null; then
         [[ $debug = "enable" ]] && echo -e "${OK} ${GreenBG} $1 已经启动 ${Font}"
     else
-        echo -e "\n${Error} ${RedBG} 检测到 $1 服务未启动，根据依赖关系，以下选项将被屏蔽，请修复后再试... ${Font}"
-        [[ $1 = "tls-shunt-proxy" ]] && echo -e "${WARN} ${Yellow}[屏蔽] 安装（Trojan-Go/V2Ray）TCP/WS 代理\n[屏蔽] （Trojan-Go/V2Ray）配置修改 / 查看配置信息${Font}"
-        [[ $1 = "docker" ]] && echo -e "${WARN} ${Yellow}[屏蔽] 安装/卸载 WatchTower（自动更新容器）\n[屏蔽] 安装/卸载 Portainer（Web管理容器）${Font}"
+        echo -e "\n${Error} ${RedBG} 检测到 $1 服务未成功启动，根据依赖关系，以下选项将被屏蔽，请修复后再试... ${Font}"
+        [[ $1 = "tls-shunt-proxy" ]] && echo -e "${Yellow}[屏蔽] 安装（Trojan-Go/V2Ray）TCP/WS 代理\n[屏蔽] （Trojan-Go/V2Ray）配置修改\n[屏蔽] 查看配置信息${Font}"
+        [[ $1 = "docker" ]] && echo -e "${Yellow}[屏蔽] 安装/卸载 WatchTower（自动更新容器）\n[屏蔽] 安装/卸载 Portainer（Web管理容器）${Font}"
         read -t 60 -n 1 -s -rp "按任意键继续（60s）..."
     fi
 }
