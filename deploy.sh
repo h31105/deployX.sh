@@ -58,7 +58,7 @@ WARN="${Yellow}[警告]${Font}"
 Error="${Red}[错误]${Font}"
 
 #版本、初始化变量
-shell_version="1.11"
+shell_version="1.12"
 tsp_cfg_version="0.63"
 upgrade_mode="none"
 github_branch="master"
@@ -589,7 +589,7 @@ tsp_sync() {
         tjport="$(grep '"local_port"' ${trojan_conf} | sed -r 's/.*: (.*),.*/\1/')" && trojan_tcp_mode=true &&
             tjwspath="$(grep '"path":' ${trojan_conf} | awk -F '"' '{print $4}')" && trojan_ws_mode="$(jq -r '.websocket.enabled' ${trojan_conf})"
         judge "检测 Trojan-Go 配置"
-        [[ -z $tjport ]] && trojan_tcp_mode=false && tjport=40001
+        [[ -z $tjport ]] && trojan_tcp_mode=false
         [[ $trojan_ws_mode = null ]] && trojan_ws_mode=false
         [[ -z $tjwspath ]] && tjwspath=none
         echo -e "检测到：Trojan-Go 代理：TCP：${Green}${trojan_tcp_mode}${Font} / WebSocket：${Green}${trojan_ws_mode}${Font} / 端口：${Green}${tjport}${Font} / WebSocket Path：${Green}${tjwspath}${Font}"
@@ -603,8 +603,8 @@ tsp_sync() {
             v2ray_ws_mode="$(jq -r '[.inbounds[] | select(.streamSettings.network=="ws") | .protocol][0]' ${v2ray_conf})" &&
             v2wspath="$(jq -r '[.inbounds[] | select(.streamSettings.network=="ws") | .streamSettings.wsSettings.path][0]' ${v2ray_conf})"
         judge "检测 V2Ray 配置"
-        [[ $v2port = null ]] && v2port=40003
-        [[ $v2wsport = null ]] && v2wsport=40002
+        [[ $v2port = null ]] && v2port=none
+        [[ $v2wsport = null ]] && v2wsport=none
         [[ $v2ray_tcp_mode = null ]] && v2ray_tcp_mode=none
         [[ $v2ray_ws_mode = null ]] && v2ray_ws_mode=none
         [[ $v2wspath = null ]] && v2wspath=none
@@ -612,6 +612,9 @@ tsp_sync() {
     fi
 
     if [[ -f ${tsp_conf} ]]; then
+    	[[ -z $tjport ]] && tjport=40001
+        [[ -z $v2port ]] && v2port=40003
+        [[ -z $v2wsport ]] && v2wsport=40002
         sed -i "/#Trojan_TCP_Port/c \\      args: 127.0.0.1:${tjport} #Trojan_TCP_Port:${trojan_tcp_mode}" ${tsp_conf} && sed -i "/#Trojan_WS_Port/c \\        args: 127.0.0.1:${tjport} #Trojan_WS_Port:${trojan_ws_mode}" ${tsp_conf} &&
             sed -i "/#Trojan_WS_Path/c \\      - path: ${tjwspath} #Trojan_WS_Path" ${tsp_conf}
         sed -i "/#V2Ray_TCP_Port/c \\      args: 127.0.0.1:${v2port};proxyProtocol #V2Ray_TCP_Port:${v2ray_tcp_mode}" ${tsp_conf} && sed -i "/#V2Ray_WS_Port/c \\        args: 127.0.0.1:${v2wsport};proxyProtocol #V2Ray_WS_Port:${v2ray_ws_mode}" ${tsp_conf} &&
