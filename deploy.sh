@@ -860,12 +860,12 @@ deployed_status_check() {
     [[ -f ${trojan_conf} && $trojan_tcp_mode = true && $trojan_stat = "installed" ]] &&
         tjport=$(grep '"local_port"' ${trojan_conf} | sed -r 's/.*: (.*),.*/\1/') &&
         tjpassword=$(grep '"password"' ${trojan_conf} | awk -F '"' '{print $4}') &&
-        [[ $tjport != "$trojan_tcp_port" ]] && echo -e "${Error} ${RedBG} 检测到 Trojan-Go TCP 分流配置端口与实际监听端口不一致... ${Font}"
+        [[ $tjport != "$trojan_tcp_port" ]] && echo -e "${Error} ${RedBG} 检测到 Trojan-Go TCP 分流端口配置异常 ${Font}"
 
     [[ -f ${trojan_conf} && $trojan_ws_mode = true && $trojan_stat = "installed" ]] &&
         tjwspath=$(grep '"path":' ${trojan_conf} | awk -F '"' '{print $4}') &&
         tjwshost=$(grep '"host":' ${trojan_conf} | awk -F '"' '{print $4}') &&
-        [[ $tjport != "$trojan_ws_port" ]] && echo -e "${Error} ${RedBG} 检测到 Trojan-Go WS 分流配置端口与实际监听端口不一致... ${Font}"
+        [[ $tjport != "$trojan_ws_port" ]] && echo -e "${Error} ${RedBG} 检测到 Trojan-Go WS 分流端口配置异常 ${Font}"
 
     [[ -f ${v2ray_conf} && $v2ray_tcp_mode = "vmess" && $v2ray_stat = "installed" ]] &&
         v2port=$(jq -r '[.inbounds[] | select(.protocol=="vmess") | select(.streamSettings.network=="tcp") | .port][0]' ${v2ray_conf}) &&
