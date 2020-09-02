@@ -615,6 +615,8 @@ tsp_sync() {
     	[[ -z $tjport ]] && tjport=40001
         [[ -z $v2port ]] && v2port=40003
         [[ -z $v2wsport ]] && v2wsport=40002
+	[[ -z $tjwspath ]] && tjwspath=/trojan/${camouflage}
+	[[ -z $v2wspath ]] && v2wspath=/v2ray/${camouflage}
         sed -i "/#Trojan_TCP_Port/c \\      args: 127.0.0.1:${tjport} #Trojan_TCP_Port:${trojan_tcp_mode}" ${tsp_conf} && sed -i "/#Trojan_WS_Port/c \\        args: 127.0.0.1:${tjport} #Trojan_WS_Port:${trojan_ws_mode}" ${tsp_conf} &&
             sed -i "/#Trojan_WS_Path/c \\      - path: ${tjwspath} #Trojan_WS_Path" ${tsp_conf}
         sed -i "/#V2Ray_TCP_Port/c \\      args: 127.0.0.1:${v2port};proxyProtocol #V2Ray_TCP_Port:${v2ray_tcp_mode}" ${tsp_conf} && sed -i "/#V2Ray_WS_Port/c \\        args: 127.0.0.1:${v2wsport};proxyProtocol #V2Ray_WS_Port:${v2ray_ws_mode}" ${tsp_conf} &&
