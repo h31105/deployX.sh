@@ -58,7 +58,7 @@ WARN="${Yellow}[警告]${Font}"
 Error="${Red}[错误]${Font}"
 
 #版本、初始化变量
-shell_version="1.10"
+shell_version="1.11"
 tsp_cfg_version="0.63"
 upgrade_mode="none"
 github_branch="master"
@@ -895,7 +895,7 @@ deployed_status_check() {
         echo -e "${WARN} ${Yellow}[屏蔽] Trojan-Go 配置修改${Font}"
     [[ $v2ray_stat = "installed" && ! -f $v2ray_conf ]] && echo -e "\n${Error} ${RedBG} 检测到 V2Ray 代理配置异常，以下选项功能将被屏蔽，请尝试重装修复后重试... ${Font}" &&
         echo -e "${WARN} ${Yellow}[屏蔽] V2Ray 配置修改${Font}"
-    [[ $tsp_conf_current_version != "${tsp_cfg_version}" ]] && echo -e "${WARN} ${Yellow}提醒: 检测到 TLS-Shunt-Proxy 配置为过时版本，请通过 卸载/安装 TLS-Shunt-Proxy 来完成新版本的配置适配 ${Font}"
+    [[ $tsp_stat="installed" && $tsp_conf_current_version != "${tsp_cfg_version}" ]] && echo -e "${WARN} ${Yellow}提醒: 检测到 TLS-Shunt-Proxy 配置为过时版本，请通过 卸载/安装 TLS-Shunt-Proxy 来完成新版本的配置适配 ${Font}"
     [[ $debug = "enable" ]] && echo -e "\n Trojan-Go 代理：TCP：${Green}${trojan_tcp_mode}${Font} / WebSocket：${Green}${trojan_ws_mode}${Font}\n     V2Ray 代理：TCP：${Green}${v2ray_tcp_mode}${Font} / WebSocket：${Green}${v2ray_ws_mode}${Font}" &&
         echo -e "\n 代理容器：Trojan-Go：${Green}${trojan_stat}${Font} / V2Ray：${Green}${v2ray_stat}${Font}" &&
         echo -e " 其他容器：WatchTower：${Green}${watchtower_stat}${Font} / Portainer：${Green}${portainer_stat}${Font}"
