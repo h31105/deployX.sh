@@ -911,6 +911,7 @@ deployed_status_check() {
             uninstall_tsp
             install_tls_shunt_proxy
             tsp_sync
+	    deployed_status_check
             ;;
         *) ;;
         esac
