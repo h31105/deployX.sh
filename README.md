@@ -8,8 +8,14 @@
 
     更新内容详见 Release 页面
 
+最新版：
 ```Bash
-wget -N --no-check-certificate -q "https://cdn.jsdelivr.net/gh/h31105/trojan_v2_docker_onekey@latest/deploy.sh" && \
+wget -N --no-check-certificate -q "https://cdn.jsdelivr.net/gh/h31105/trojan_v2_docker_onekey/deploy.sh" && \
+chmod +x deploy.sh && bash deploy.sh
+```
+稳定版：
+```Bash
+wget -N --no-check-certificate -q "https://cdn.jsdelivr.net/gh/h31105/trojan_v2_docker_onekey@1.00/deploy.sh" && \
 chmod +x deploy.sh && bash deploy.sh
 ```
 
