@@ -5,6 +5,7 @@
 ![GitHub release (latest by date)](https://img.shields.io/github/v/release/h31105/trojan_v2_docker_onekey?style=flat)
 ![GitHub forks](https://img.shields.io/github/forks/h31105/trojan_v2_docker_onekey?style=flat)
 ![Visitors](https://visitor-badge.glitch.me/badge?page_id=h31105.trojan_v2_docker_onekey)
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fh31105%2Ftrojan_v2_docker_onekey.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2Fh31105%2Ftrojan_v2_docker_onekey?ref=badge_shield)
 
 基于 Docker 容器架构的 Trojan-Go/VLESS/VMess TLS 部署脚本
 本方案采用 TSP 进行 TLS 前置分流，后端使用 Trojan-Go、V2Ray 容器与 WatchTower、Portainer 维护组件配合，实现快速部署、易用易维护的极致体验。
@@ -73,3 +74,7 @@ chmod +x deploy.sh && bash deploy.sh
 - [Portainer](https://github.com/portainer/portainer)
 
 [![H31105's github stats](https://github-readme-stats.vercel.app/api?username=h31105&count_private=true&show_icons=true)](https://github.com/h31105)
+
+
+## License
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fh31105%2Ftrojan_v2_docker_onekey.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2Fh31105%2Ftrojan_v2_docker_onekey?ref=badge_large)
