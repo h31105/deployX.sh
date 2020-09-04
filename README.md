@@ -74,7 +74,6 @@ chmod +x deploy.sh && bash deploy.sh
 ### TLS-Shunt-Proxy 日志查看
 
 -   查看所有日志：journalctl -u tls-shunt-proxy.service
-
 -   查看当天日志：journalctl -u tls-shunt-proxy.service --since today
 
 ### 容器日志查看
