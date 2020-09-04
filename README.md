@@ -1,4 +1,4 @@
-# TSP & Trojan-Go / V2Ray 容器化管理部署脚本 deploy.sh
+# TSP & Trojan-Go / V2Ray 容器化管理部署脚本
 
 ![GitHub](https://img.shields.io/github/license/h31105/trojan_v2_docker_onekey?style=flat)
 [![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fh31105%2Ftrojan_v2_docker_onekey.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2Fh31105%2Ftrojan_v2_docker_onekey?ref=badge_shield)
