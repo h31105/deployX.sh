@@ -58,7 +58,7 @@ Error="${Red}[错误]${Font}"
 
 #版本、初始化变量
 shell_version="1.14"
-tsp_cfg_version="0.64"
+tsp_cfg_version="0.61.1"
 upgrade_mode="none"
 github_branch="master"
 version_cmp="/tmp/version_cmp.tmp"
