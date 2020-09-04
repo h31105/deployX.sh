@@ -73,8 +73,6 @@ web_dir="/home/wwwroot"
 
 #简易随机数
 random_num=$((RANDOM % 3 + 7))
-#生成伪装路径
-camouflage="/$(head -n 10 /dev/urandom | md5sum | head -c ${random_num})/"
 
 #shellcheck disable=SC1091
 source '/etc/os-release'
@@ -294,8 +292,8 @@ trojan_reset() {
     [[ -z ${trojan_ws_mode} ]] && trojan_ws_mode=false
     case $trojan_ws_mode in
     [yY][eE][sS] | [yY])
-        camouflage="/$(head -n 10 /dev/urandom | md5sum | head -c ${random_num})/"
-        echo -e "${OK} ${GreenBG} Trojan-Go WebSocket 模式开启，WSPATH: ${camouflage} ${Font}"
+        tjwspath="/trojan/$(head -n 10 /dev/urandom | md5sum | head -c ${random_num})/"
+        echo -e "${OK} ${GreenBG} Trojan-Go WebSocket 模式开启，WSPATH: ${tjwspath} ${Font}"
         trojan_ws_mode=true
         ;;
     *)
@@ -322,16 +320,14 @@ trojan_reset() {
     },
     "websocket": {
         "enabled": ${trojan_ws_mode},
-        "path": "${camouflage}",
+        "path": "${tjwspath}",
         "host": "${TSP_Domain}"
     }
 }
 EOF
     judge "Trojan-Go 配置生成"
     port_exist_check $tjport
-    sed -i "/#Trojan_WS_Port/c \\        args: 127.0.0.1:${tjport} #Trojan_WS_Port:${trojan_ws_mode}" ${tsp_conf} &&
-        sed -i "/#Trojan_WS_Path/c \\      - path: ${camouflage} #Trojan_WS_Path" ${tsp_conf}
-    sed -i "/#Trojan_TCP_Port/c \\      args: 127.0.0.1:${tjport} #Trojan_TCP_Port:${trojan_tcp_mode}" ${tsp_conf}
+    trojan_sync
     judge "同步 Trojan-Go 配置设置"
     systemctl restart tls-shunt-proxy && service_status_check tls-shunt-proxy
     judge "TLS-Shunt-Proxy 应用设置"
@@ -350,6 +346,31 @@ modify_trojan() {
         ;;
     *) ;;
     esac
+}
+
+trojan_sync() {
+    [[ -z $tjport ]] && tjport=40001
+    [[ -z $tjwspath ]] && tjwspath=/trojan/none
+    [[ -z $trojan_tcp_mode ]] && trojan_tcp_mode=none
+    [[ -z $trojan_ws_mode ]] && trojan_ws_mode=none
+    if [[ ${trojan_tcp_mode} = true ]]; then
+        sed -i "/trojan: #Trojan_TCP/c \\    trojan: #Trojan_TCP" ${tsp_conf}
+        sed -i "/handler: proxyPass #Trojan_TCP/c \\      handler: proxyPass #V2Ray_TCP" ${tsp_conf}
+        sed -i "/#Trojan_TCP_Port/c \\      args: 127.0.0.1:${tjport} #Trojan_TCP_Port:${trojan_tcp_mode}" ${tsp_conf}
+    else
+        sed -i "/trojan: #Trojan_TCP/c \\    #trojan: #Trojan_TCP" ${tsp_conf}
+        sed -i "/handler: proxyPass #Trojan_TCP/c \\      #handler: proxyPass #V2Ray_TCP" ${tsp_conf}
+        sed -i "/#Trojan_TCP_Port/c \\      #args: 127.0.0.1:${tjport} #Trojan_TCP_Port:${trojan_tcp_mode}" ${tsp_conf}
+    fi
+    if [[ ${trojan_ws_mode} = true ]]; then
+        sed -i "/#Trojan_WS_Path/c \\      - path: ${tjwspath} #Trojan_WS_Path" ${tsp_conf}
+        sed -i "/handler: proxyPass #Trojan_WS/c \\        handler: proxyPass #Trojan_WS" ${tsp_conf}
+        sed -i "/#Trojan_WS_Port/c \\        args: 127.0.0.1:${tjport} #Trojan_WS_Port:${trojan_ws_mode}" ${tsp_conf}
+    else
+        sed -i "/#Trojan_WS_Path/c \\      #- path: ${tjwspath} #Trojan_WS_Path" ${tsp_conf}
+        sed -i "/handler: proxyPass #Trojan_WS/c \\        #handler: proxyPass #Trojan_WS" ${tsp_conf}
+        sed -i "/#Trojan_WS_Port/c \\        #args: 127.0.0.1:${tjport} #Trojan_WS_Port:${trojan_ws_mode}" ${tsp_conf}
+    fi
 }
 
 v2ray_mode_type() {
@@ -453,19 +474,19 @@ EOF
     if [[ "${v2ray_ws_mode}" = v*ess ]]; then
         UUID=$(cat /proc/sys/kernel/random/uuid)
         echo -e "${OK} ${GreenBG} UUID:${UUID} ${Font}"
-        camouflage="/$(head -n 10 /dev/urandom | md5sum | head -c ${random_num})/"
-        echo -e "${OK} ${GreenBG} 开启V2Ray WS模式，WSPATH: ${camouflage} ${Font}"
+        v2wspath="/v2ray/$(head -n 10 /dev/urandom | md5sum | head -c ${random_num})/"
+        echo -e "${OK} ${GreenBG} 开启V2Ray WS模式，WSPATH: ${v2wspath} ${Font}"
         v2wsport=$((RANDOM % 6666 + 30000))
         echo -e "${OK} ${GreenBG} V2Ray WS 监听端口为 ${v2wsport} ${Font}"
         if [[ "${v2ray_ws_mode}" = "vmess" ]]; then
             #read -rp "请输入 WS 模式 AlterID（默认:10 仅允许填非0数字）:" alterID
             [[ -z ${alterID} ]] && alterID="10"
-            jq '.inbounds += [{"sniffing":{"enabled":true,"destOverride":["http","tls"]},"port":'${v2wsport}',"listen":"127.0.0.1","tag":"vmess-ws-in","protocol":"vmess","settings":{"clients":[{"id":"'"${UUID}"'","alterId":'${alterID}'}]},"streamSettings":{"network":"ws","wsSettings":{"acceptProxyProtocol":true,"path":"'"${camouflage}"'"}}}]' ${v2ray_conf} | sponge ${v2ray_conf} &&
+            jq '.inbounds += [{"sniffing":{"enabled":true,"destOverride":["http","tls"]},"port":'${v2wsport}',"listen":"127.0.0.1","tag":"vmess-ws-in","protocol":"vmess","settings":{"clients":[{"id":"'"${UUID}"'","alterId":'${alterID}'}]},"streamSettings":{"network":"ws","wsSettings":{"acceptProxyProtocol":true,"path":"'"${v2wspath}"'"}}}]' ${v2ray_conf} | sponge ${v2ray_conf} &&
                 jq '.routing.rules[2].inboundTag += ["vmess-ws-in"]' ${v2ray_conf} | sponge ${v2ray_conf}
             judge "V2Ray VMess WS配置生成"
         fi
         if [[ "${v2ray_ws_mode}" = "vless" ]]; then
-            jq '.inbounds += [{"sniffing":{"enabled":true,"destOverride":["http","tls"]},"port":'${v2wsport}',"listen":"127.0.0.1","tag":"vless-ws-in","protocol":"vless","settings":{"clients":[{"id":"'"${UUID}"'","level":0}],"decryption":"none"},"streamSettings":{"network":"ws","wsSettings":{"acceptProxyProtocol":true,"path":"'"${camouflage}"'"}}}]' ${v2ray_conf} | sponge ${v2ray_conf} &&
+            jq '.inbounds += [{"sniffing":{"enabled":true,"destOverride":["http","tls"]},"port":'${v2wsport}',"listen":"127.0.0.1","tag":"vless-ws-in","protocol":"vless","settings":{"clients":[{"id":"'"${UUID}"'","level":0}],"decryption":"none"},"streamSettings":{"network":"ws","wsSettings":{"acceptProxyProtocol":true,"path":"'"${v2wspath}"'"}}}]' ${v2ray_conf} | sponge ${v2ray_conf} &&
                 jq '.routing.rules[2].inboundTag += ["vless-ws-in"]' ${v2ray_conf} | sponge ${v2ray_conf}
             judge "V2Ray VLESS WS配置生成"
         fi
@@ -491,9 +512,7 @@ EOF
         port_exist_check ${v2port}
     fi
     if [[ -f ${tsp_conf} ]]; then
-        sed -i "/#V2Ray_WS_Port/c \\        args: 127.0.0.1:${v2wsport};proxyProtocol #V2Ray_WS_Port:${v2ray_ws_mode}" ${tsp_conf} &&
-            sed -i "/#V2Ray_WS_Path/c \\      - path: ${camouflage} #V2Ray_WS_Path" ${tsp_conf}
-        sed -i "/#V2Ray_TCP_Port/c \\      args: 127.0.0.1:${v2port};proxyProtocol #V2Ray_TCP_Port:${v2ray_tcp_mode}" ${tsp_conf}
+        v2ray_sync
         judge "同步 V2Ray 配置"
         systemctl restart tls-shunt-proxy && service_status_check tls-shunt-proxy
         judge "TLS-Shunt-Proxy 应用设置"
@@ -517,6 +536,32 @@ modify_v2ray() {
         ;;
     *) ;;
     esac
+}
+
+v2ray_sync() {
+    [[ -z $v2port ]] && v2port=40003
+    [[ -z $v2wsport ]] && v2wsport=40002
+    [[ -z $v2wspath ]] && v2wspath=/v2ray/none
+    [[ -z $v2ray_tcp_mode ]] && v2ray_tcp_mode=none
+    [[ -z $v2ray_ws_mode ]] && v2ray_ws_mode=none
+    if [[ ${v2ray_tcp_mode} = v*ess ]]; then
+        sed -i "/default: #V2Ray_TCP/c \\    default: #V2Ray_TCP" ${tsp_conf}
+        sed -i "/handler: proxyPass #V2Ray_TCP/c \\      handler: proxyPass #V2Ray_TCP" ${tsp_conf}
+        sed -i "/#V2Ray_TCP_Port/c \\      args: 127.0.0.1:${v2port};proxyProtocol #V2Ray_TCP_Port:${v2ray_tcp_mode}" ${tsp_conf}
+    else
+        sed -i "/default: #V2Ray_TCP/c \\    #default: #V2Ray_TCP" ${tsp_conf}
+        sed -i "/handler: proxyPass #V2Ray_TCP/c \\      #handler: proxyPass #V2Ray_TCP" ${tsp_conf}
+        sed -i "/#V2Ray_TCP_Port/c \\      #args: 127.0.0.1:${v2port};proxyProtocol #V2Ray_TCP_Port:${v2ray_tcp_mode}" ${tsp_conf}
+    fi
+    if [[ ${v2ray_ws_mode} = v*ess ]]; then
+        sed -i "/#V2Ray_WS_Path/c \\      - path: ${v2wspath} #V2Ray_WS_Path" ${tsp_conf}
+        sed -i "/handler: proxyPass #V2Ray_WS/c \\        handler: proxyPass #V2Ray_WS" ${tsp_conf}
+        sed -i "/#V2Ray_WS_Port/c \\        args: 127.0.0.1:${v2wsport};proxyProtocol #V2Ray_WS_Port:${v2ray_ws_mode}" ${tsp_conf}
+    else
+        sed -i "/#V2Ray_WS_Path/c \\      #- path: ${v2wspath} #V2Ray_WS_Path" ${tsp_conf}
+        sed -i "/handler: proxyPass #V2Ray_WS/c \\        #handler: proxyPass #V2Ray_WS" ${tsp_conf}
+        sed -i "/#V2Ray_WS_Port/c \\        #args: 127.0.0.1:${v2wsport};proxyProtocol #V2Ray_WS_Port:${v2ray_ws_mode}" ${tsp_conf}
+    fi
 }
 
 web_camouflage() {
@@ -555,20 +600,20 @@ vhosts:
     protocols: tls12,tls13
     http:
       paths:
-      - path: /trojan/${camouflage} #Trojan_WS_Path
-        handler: proxyPass #Trojan_WS
-        args: 127.0.0.1:40000 #Trojan_WS_Port:${trojan_ws_mode}
-      - path: /v2ray/${camouflage} #V2Ray_WS_Path
-        handler: proxyPass #V2Ray_WS
-        args: 127.0.0.1:40002;proxyProtocol #V2Ray_WS_Port:${v2ray_ws_mode}
+      #- path: /trojan/none #Trojan_WS_Path
+        #handler: proxyPass #Trojan_WS
+        #args: 127.0.0.1:40000 #Trojan_WS_Port:${trojan_ws_mode}
+      #- path: /v2ray/none #V2Ray_WS_Path
+        #handler: proxyPass #V2Ray_WS
+        #args: 127.0.0.1:40002;proxyProtocol #V2Ray_WS_Port:${v2ray_ws_mode}
       handler: fileServer
       args: ${web_dir}/LodeRunner_TotalRecall #Website
-    trojan: #Trojan_TCP
-      handler: proxyPass #Trojan_TCP
-      args: 127.0.0.1:40001 #Trojan_TCP_Port:${trojan_tcp_mode}
-    default: #V2Ray_TCP
-      handler: proxyPass #V2Ray_TCP
-      args: 127.0.0.1:40003;proxyProtocol #V2Ray_TCP_Port:${v2ray_tcp_mode}
+    #trojan: #Trojan_TCP
+      #handler: proxyPass #Trojan_TCP
+      #args: 127.0.0.1:40001 #Trojan_TCP_Port:${trojan_tcp_mode}
+    #default: #V2Ray_TCP
+      #handler: proxyPass #V2Ray_TCP
+      #args: 127.0.0.1:40003;proxyProtocol #V2Ray_TCP_Port:${v2ray_tcp_mode}
 EOF
     judge "安装 TLS-Shunt-Proxy"
     systemctl daemon-reload && systemctl reset-failed
@@ -613,15 +658,8 @@ tsp_sync() {
     fi
 
     if [[ -f ${tsp_conf} ]]; then
-        [[ -z $tjport ]] && tjport=40001
-        [[ -z $v2port ]] && v2port=40003
-        [[ -z $v2wsport ]] && v2wsport=40002
-        [[ -z $tjwspath ]] && tjwspath=/trojan/none
-        [[ -z $v2wspath ]] && v2wspath=/v2ray/none
-        sed -i "/#Trojan_TCP_Port/c \\      args: 127.0.0.1:${tjport} #Trojan_TCP_Port:${trojan_tcp_mode}" ${tsp_conf} && sed -i "/#Trojan_WS_Port/c \\        args: 127.0.0.1:${tjport} #Trojan_WS_Port:${trojan_ws_mode}" ${tsp_conf} &&
-            sed -i "/#Trojan_WS_Path/c \\      - path: ${tjwspath} #Trojan_WS_Path" ${tsp_conf}
-        sed -i "/#V2Ray_TCP_Port/c \\      args: 127.0.0.1:${v2port};proxyProtocol #V2Ray_TCP_Port:${v2ray_tcp_mode}" ${tsp_conf} && sed -i "/#V2Ray_WS_Port/c \\        args: 127.0.0.1:${v2wsport};proxyProtocol #V2Ray_WS_Port:${v2ray_ws_mode}" ${tsp_conf} &&
-            sed -i "/#V2Ray_WS_Path/c \\      - path: ${v2wspath} #V2Ray_WS_Path" ${tsp_conf}
+        trojan_sync
+        v2ray_sync
         systemctl restart tls-shunt-proxy
         judge "TLS-Shunt-Proxy 同步配置"
         menu_req_check tls-shunt-proxy
@@ -736,8 +774,7 @@ uninstall_proxy_server() {
 uninstall_trojan() {
     rm -rf $trojan_conf_dir
     trojan_ws_mode="none" && trojan_tcp_mode="none"
-    [ -f ${tsp_conf} ] && sed -i "/#Trojan_WS_Port/c \\        args: 127.0.0.1:40000 #Trojan_WS_Port:${trojan_ws_mode}" ${tsp_conf} &&
-        sed -i "/#Trojan_TCP_Port/c \\      args: 127.0.0.1:40001 #Trojan_TCP_Port:${trojan_tcp_mode}" ${tsp_conf}
+    [ -f ${tsp_conf} ] && trojan_sync
     systemctl start docker
     [[ $trojan_stat = "installed" ]] && docker stop Trojan-Go && docker rm -f Trojan-Go &&
         echo -e "${OK} ${GreenBG} 卸载 Trojan-Go TCP/WS 代理完成！ ${Font}"
@@ -746,8 +783,7 @@ uninstall_trojan() {
 uninstall_v2ray() {
     rm -rf $v2ray_conf_dir
     v2ray_ws_mode="none" && v2ray_tcp_mode="none"
-    [ -f ${tsp_conf} ] && sed -i "/#V2Ray_WS_Port/c \\        args: 127.0.0.1:40002;proxyProtocol #V2Ray_WS_Port:${v2ray_ws_mode}" ${tsp_conf} &&
-        sed -i "/#V2Ray_TCP_Port/c \\      args: 127.0.0.1:40003;proxyProtocol #V2Ray_TCP_Port:${v2ray_tcp_mode}" ${tsp_conf}
+    [ -f ${tsp_conf} ] && v2ray_sync
     systemctl start docker
     [[ $v2ray_stat = "installed" ]] && docker stop V2Ray && docker rm -f V2Ray &&
         echo -e "${OK} ${GreenBG} 卸载 V2Ray TCP/WS 代理完成！ ${Font}"
@@ -908,7 +944,7 @@ deployed_status_check() {
                     echo -e "${GreenBG} 尝试修复安装 Chrony 时间同步服务 ${Font}"
                     check_system
                     chrony_install
-                    ;;                              
+                    ;;
                 *) ;;
                 esac
             fi
