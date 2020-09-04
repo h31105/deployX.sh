@@ -52,13 +52,12 @@ RedBG="\033[41;30m"
 Font="\033[0m"
 
 #Notification Information
-# Info="${Green}[信息]${Font}"
 OK="${Green}[OK]${Font}"
 WARN="${Yellow}[警告]${Font}"
 Error="${Red}[错误]${Font}"
 
 #版本、初始化变量
-shell_version="1.13"
+shell_version="1.14"
 tsp_cfg_version="0.64"
 upgrade_mode="none"
 github_branch="master"
@@ -355,11 +354,11 @@ trojan_sync() {
     [[ -z $trojan_ws_mode ]] && trojan_ws_mode=none
     if [[ ${trojan_tcp_mode} = true ]]; then
         sed -i "/trojan: #Trojan_TCP/c \\    trojan: #Trojan_TCP" ${tsp_conf}
-        sed -i "/handler: proxyPass #Trojan_TCP/c \\      handler: proxyPass #V2Ray_TCP" ${tsp_conf}
+        sed -i "/handler: proxyPass #Trojan_TCP/c \\      handler: proxyPass #Trojan_TCP" ${tsp_conf}
         sed -i "/#Trojan_TCP_Port/c \\      args: 127.0.0.1:${tjport} #Trojan_TCP_Port:${trojan_tcp_mode}" ${tsp_conf}
     else
         sed -i "/trojan: #Trojan_TCP/c \\    #trojan: #Trojan_TCP" ${tsp_conf}
-        sed -i "/handler: proxyPass #Trojan_TCP/c \\      #handler: proxyPass #V2Ray_TCP" ${tsp_conf}
+        sed -i "/handler: proxyPass #Trojan_TCP/c \\      #handler: proxyPass #Trojan_TCP" ${tsp_conf}
         sed -i "/#Trojan_TCP_Port/c \\      #args: 127.0.0.1:${tjport} #Trojan_TCP_Port:${trojan_tcp_mode}" ${tsp_conf}
     fi
     if [[ ${trojan_ws_mode} = true ]]; then
@@ -626,7 +625,6 @@ modify_tsp() {
     sed -i "/#TSP_Port/c \\listen: 0.0.0.0:${tspport} #TSP_Port" ${tsp_conf}
     sed -i "/#TSP_Domain/c \\  - name: ${domain} #TSP_Domain" ${tsp_conf}
     tsp_sync
-    info
 }
 
 tsp_sync() {
