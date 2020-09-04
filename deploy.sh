@@ -129,29 +129,29 @@ judge() {
 
 chrony_install() {
     ${INS} -y install chrony
-    judge "安装 chrony 时间同步服务"
+    judge "安装 Chrony 时间同步服务"
     timedatectl set-ntp true
     if [[ "${ID}" == "centos" ]]; then
         systemctl enable chronyd && systemctl restart chronyd
     else
         systemctl enable chrony && systemctl restart chrony
     fi
-    judge "chronyd 启动"
+    judge "Chrony 启动"
     timedatectl set-timezone Asia/Shanghai
     echo -e "${OK} ${GreenBG} 等待时间同步 ${Font}"
     sleep 10
     chronyc sourcestats -v
     chronyc tracking -v
     date
-    read -rp "请确认时间是否准确,误差范围±3分钟(Y/N): " chrony_install
+    read -rp "请确认时间是否准确，误差范围±3分钟 (Y/N) [Y]: " chrony_install
     [[ -z ${chrony_install} ]] && chrony_install="Y"
     case $chrony_install in
     [yY][eE][sS] | [yY])
-        echo -e "${GreenBG} 继续安装 ${Font}"
+        echo -e "${GreenBG} 继续执行 ${Font}"
         sleep 2
         ;;
     *)
-        echo -e "${RedBG} 安装终止 ${Font}"
+        echo -e "${RedBG} 终止执行 ${Font}"
         exit 2
         ;;
     esac
@@ -541,11 +541,12 @@ install_docker() {
 install_tsp() {
     bash <(curl -L -s https://raw.githubusercontent.com/liberal-boy/tls-shunt-proxy/master/dist/install.sh)
     rm -rf $tsp_conf && cat >$tsp_conf <<-EOF
+#TSP_CFG_Ver:${tsp_cfg_version}
 listen: 0.0.0.0:${tspport} #TSP_Port
 redirecthttps: 0.0.0.0:80
 inboundbuffersize: 4
 outboundbuffersize: 32
-vhosts: #TSP_CFG_Ver:${tsp_cfg_version}
+vhosts:
   - name: ${domain} #TSP_Domain
     tlsoffloading: true
     managedcert: true
@@ -555,18 +556,18 @@ vhosts: #TSP_CFG_Ver:${tsp_cfg_version}
     http:
       paths:
       - path: /trojan/${camouflage} #Trojan_WS_Path
-        handler: proxyPass
+        handler: proxyPass #Trojan_WS
         args: 127.0.0.1:40000 #Trojan_WS_Port:${trojan_ws_mode}
       - path: /v2ray/${camouflage} #V2Ray_WS_Path
-        handler: proxyPass
+        handler: proxyPass #V2Ray_WS
         args: 127.0.0.1:40002;proxyProtocol #V2Ray_WS_Port:${v2ray_ws_mode}
       handler: fileServer
       args: ${web_dir}/LodeRunner_TotalRecall #Website
-    trojan:
-      handler: proxyPass
+    trojan: #Trojan_TCP
+      handler: proxyPass #Trojan_TCP
       args: 127.0.0.1:40001 #Trojan_TCP_Port:${trojan_tcp_mode}
-    default:
-      handler: proxyPass
+    default: #V2Ray_TCP
+      handler: proxyPass #V2Ray_TCP
       args: 127.0.0.1:40003;proxyProtocol #V2Ray_TCP_Port:${v2ray_tcp_mode}
 EOF
     judge "安装 TLS-Shunt-Proxy"
@@ -631,7 +632,6 @@ tsp_sync() {
 }
 
 install_trojan() {
-    #check_system
     [[ $(systemctl is-active "docker") = "inactive" ]] && install_docker
     prereqcheck
     trojan_reset
@@ -641,11 +641,10 @@ install_trojan() {
 }
 
 install_v2ray() {
-    #check_system
-    #chrony_install
     [[ $(systemctl is-active "docker") = "inactive" ]] && install_docker
     prereqcheck
     v2ray_mode_type
+    [[ $v2ray_tcp_mode = "vmess" || $v2ray_ws_mode = "vmess" ]] && check_system && chrony_install
     if [[ $v2ray_tcp_mode != "none" || $v2ray_ws_mode != "none" ]]; then
         v2ray_reset
         docker pull teddysun/v2ray
@@ -696,7 +695,7 @@ uninstall_all() {
         ;;
     *)
         echo -e "${RedBG} 我再想想 ${Font}"
-        exit 2
+        exit 1
         ;;
     esac
     check_system
@@ -842,7 +841,7 @@ deployed_status_check() {
 
     echo -e "${OK} ${GreenBG} 检测分流配置信息... ${Font}"
     [[ -f ${tsp_conf} || -f '/usr/local/bin/tls-shunt-proxy' ]] &&
-        tsp_conf_current_version=$(grep '#TSP_CFG_Ver' ${tsp_conf} | sed -r 's/.*TSP_CFG_Ver:(.*) */\1/') && tsp_stat="installed" &&
+        tsp_template_version=$(grep '#TSP_CFG_Ver' ${tsp_conf} | sed -r 's/.*TSP_CFG_Ver:(.*) */\1/') && tsp_stat="installed" &&
         TSP_Port=$(grep '#TSP_Port' ${tsp_conf} | sed -r 's/.*0:(.*) #.*/\1/') && TSP_Domain=$(grep '#TSP_Domain' ${tsp_conf} | sed -r 's/.*: (.*) #.*/\1/') &&
         trojan_tcp_port=$(grep '#Trojan_TCP_Port' ${tsp_conf} | sed -r 's/.*:(.*) #.*/\1/') &&
         trojan_tcp_mode=$(grep '#Trojan_TCP_Port' ${tsp_conf} | sed -r 's/.*Trojan_TCP_Port:(.*) */\1/') &&
@@ -894,6 +893,26 @@ deployed_status_check() {
         [[ $v2ray_tcp_mode = v*ess && $v2port != "$v2ray_tcp_port" ]] && echo -e "${Error} ${RedBG} 检测到 V2Ray TCP 分流端口配置异常 ${Font}"
         [[ $v2ray_ws_mode = v*ess && $v2wsport != "$v2ray_ws_port" ]] && echo -e "${Error} ${RedBG} 检测到 V2Ray WS 分流端口配置异常 ${Font}"
         [[ $v2ray_ws_mode = v*ess && $v2wspath != "$v2ray_ws_path" ]] && echo -e "${Error} ${RedBG} 检测到 V2Ray WS 路径分流配置异常 ${Font}"
+        if [[ $v2ray_tcp_mode = "vmess" || $v2ray_ws_mode = "vmess" ]]; then
+            if [[ "${ID}" == "centos" ]]; then
+                systemctl is-active "chronyd" &>/dev/null || chrony_stat=inactive
+            else
+                systemctl is-active "chrony" &>/dev/null || chrony_stat=inactive
+            fi
+            if [[ $chrony_stat = inactive ]]; then
+                echo -e "${Error} ${RedBG} 检测到 Chrony 时间同步服务未启动，若系统时间不准确将会严重影响 V2Ray VMess 协议的可用性 ${Font}\n${WARN} ${Yellow} 当前系统时间:$(date)，请确认时间是否准确，误差范围±3分钟内 (Y/N) [Y]: ${Font}"
+                read -rp chrony_confirm
+                [[ -z ${chrony_confirm} ]] && chrony_confirm="Y"
+                case $chrony_confirm in
+                [nN][oO] | [nN])
+                    echo -e "${GreenBG} 尝试修复安装 Chrony 时间同步服务 ${Font}"
+                    check_system
+                    chrony_install
+                    ;;                              
+                *) ;;
+                esac
+            fi
+        fi
     fi
 
     [[ -f ${trojan_conf} || -f ${v2ray_conf} || $trojan_stat = "installed" || $v2ray_stat = "installed" ]] && menu_req_check docker
@@ -902,7 +921,7 @@ deployed_status_check() {
     [[ $v2ray_stat = "installed" && ! -f $v2ray_conf ]] && echo -e "\n${Error} ${RedBG} 检测到 V2Ray 代理配置异常，以下选项功能将被屏蔽，请尝试重装修复后重试... ${Font}" &&
         echo -e "${WARN} ${Yellow}[屏蔽] V2Ray 配置修改${Font}"
 
-    if [[ $tsp_stat = "installed" && $tsp_conf_current_version != "${tsp_cfg_version}" ]]; then
+    if [[ $tsp_stat = "installed" && $tsp_template_version != "${tsp_cfg_version}" ]]; then
         echo -e "${WARN} ${Yellow}检测到 TLS-Shunt-Proxy 存在关键更新，为确保脚本正常运行，请确认立即执行更新操作（Y/N）[Y] ${Font}"
         read -r upgrade_confirm
         [[ -z ${upgrade_confirm} ]] && upgrade_confirm="Yes"
