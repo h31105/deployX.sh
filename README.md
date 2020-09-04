@@ -54,11 +54,15 @@ chmod +x deploy.sh && bash deploy.sh
 ### 部署建议
 
 -   TLS-Shunt-Proxy 负责证书全自动管理和网站服务（HTTPS 默认 443 HTTP 80 自动跳转）
+
 -   Trojan-Go 容器化部署 (支持 WebSocket)
+
 -   V2Ray 容器化部署（VLESS/VMess 协议）
+
 -   容器的镜像由 WatchTower 监控并自动更新（建议安装）
 
     \*WatchTower 无需额外配置，已配置为自动更新容器并清理过期镜像）
+
 -   Portainer 基于 Web 的 Docker 管理服务（可选）
 
     \*Portainer 安装后，请尽快访问管理地址：http&#x3A;//&lt;server.domain.name>:9080，设置管理帐号和密码。 
