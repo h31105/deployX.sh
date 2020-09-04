@@ -8,7 +8,7 @@
 ![GitHub forks](https://img.shields.io/github/forks/h31105/trojan_v2_docker_onekey?style=flat)
 ![Visitors](https://visitor-badge.glitch.me/badge?page_id=h31105.trojan_v2_docker_onekey)
 
-## 基于 Docker 容器架构的 Trojan-Go/VLESS/VMess-TCP/WS-TLS 部署脚本
+## 基于 Docker 容器架构的 Trojan-Go/VLESS/VMess-TCP/WS-TLS 分流部署&管理脚本
 
 本方案采用 TSP 进行 TLS 前置分流，后端使用 Trojan-Go、V2Ray 容器与 WatchTower、Portainer 维护组件配合，实现快速部署、易用易维护的极致体验。
 
@@ -26,7 +26,7 @@ wget -N --no-check-certificate -q "https://cdn.jsdelivr.net/gh/h31105/trojan_v2_
 chmod +x deploy.sh && bash deploy.sh
 ```
 
-**提醒：** 由于 1.10 版本改动较多，使用 1.00 以前版本脚本部署的环境，**与新版脚本存在配置兼容性问题，请在脚本升级后，根据提示重新安装 TLS-Shunt-Proxy 来完成新版本的配置适配。**（更新内容详见 Release 页面）
+**提醒** 由于 1.10 版本改动较多，使用 1.00 以前版本脚本部署的环境，**与新版脚本存在配置兼容性问题，请在脚本升级后，根据提示重新安装 TLS-Shunt-Proxy 来完成新版本的配置适配。**（更新内容详见 Release 页面）
 
 ## 使用简介
 
@@ -67,7 +67,9 @@ chmod +x deploy.sh && bash deploy.sh
 
     \*Portainer 安装后，请尽快访问管理地址：http&#x3A;//&lt;server.domain.name>:9080，设置管理帐号和密码。 
 
-**注意：本脚本为单用户配置，部署后可以自定义配置内容，但不要使用脚本菜单中的修改选项，修改选项会 重置 相关配置信息。部署后，请按需开启防火墙端口，例如 HTTP 80、9080 及 HTTPS 443 端口。**
+**注意**
+
+本脚本为**单用户**配置，部署后可以**自行按需修改**代理配置内容，但修改后**不要**使用脚本菜单中的修改选项，修改选项会**重置**相关配置信息。部署后请按需**开启防火墙端口**，例如 HTTP 80、9080 及 HTTPS 443 端口。
 
 配置文件位置：
 
