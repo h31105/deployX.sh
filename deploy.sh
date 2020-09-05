@@ -952,7 +952,7 @@ deployed_status_check() {
             fi
         fi
     fi
-    
+
     [[ -f ${trojan_conf} || -f ${v2ray_conf} || $trojan_stat = "installed" || $v2ray_stat = "installed" ]] && menu_req_check docker
     [[ $trojan_stat = "installed" && ! -f $trojan_conf ]] && echo -e "\n${Error} ${RedBG} 检测到 Trojan-Go 代理配置异常，以下选项功能将被屏蔽，请尝试重装修复后重试... ${Font}" &&
         echo -e "${WARN} ${Yellow}[屏蔽] Trojan-Go 配置修改${Font}"
