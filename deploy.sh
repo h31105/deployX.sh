@@ -57,7 +57,7 @@ WARN="${Yellow}[警告]${Font}"
 Error="${Red}[错误]${Font}"
 
 #版本、初始化变量
-shell_version="1.14"
+shell_version="1.15"
 tsp_cfg_version="0.61.1"
 upgrade_mode="none"
 github_branch="master"
@@ -628,7 +628,7 @@ modify_tsp() {
 }
 
 tsp_sync() {
-    echo -e "${OK} ${GreenBG} TLS-Shunt-Proxy 检测并同步现有代理配置... ${Font}"
+    echo -e "${OK} ${GreenBG} 检测并同步现有代理配置... ${Font}"
     if [[ $trojan_stat = "installed" ]] && [[ -f ${trojan_conf} ]]; then
         tjport="$(grep '"local_port"' ${trojan_conf} | sed -r 's/.*: (.*),.*/\1/')" && trojan_tcp_mode=true &&
             tjwspath="$(grep '"path":' ${trojan_conf} | awk -F '"' '{print $4}')" && trojan_ws_mode="$(jq -r '.websocket.enabled' ${trojan_conf})"
@@ -658,8 +658,9 @@ tsp_sync() {
     if [[ -f ${tsp_conf} ]]; then
         trojan_sync
         v2ray_sync
+        tsp_config_stat="synchronized"
         systemctl restart tls-shunt-proxy
-        judge "TLS-Shunt-Proxy 同步配置"
+        judge "分流配置同步"
         menu_req_check tls-shunt-proxy
     else
         echo -e "${Error} ${RedBG} TLS-Shunt-Proxy 配置异常，请重新安装后再试 ${Font}"
@@ -872,6 +873,7 @@ list() {
 deployed_status_check() {
     tsp_stat="none" && trojan_stat="none" && v2ray_stat="none" && watchtower_stat="none" && portainer_stat="none"
     trojan_tcp_mode="none" && v2ray_tcp_mode="none" && trojan_ws_mode="none" && v2ray_ws_mode="none"
+    tsp_config_stat="synchronized"
 
     echo -e "${OK} ${GreenBG} 检测分流配置信息... ${Font}"
     [[ -f ${tsp_conf} || -f '/usr/local/bin/tls-shunt-proxy' ]] &&
@@ -896,37 +898,39 @@ deployed_status_check() {
     systemctl is-active "docker" &>/dev/null && docker ps -a | grep Portainer &>/dev/null && portainer_stat="installed"
 
     echo -e "${OK} ${GreenBG} 检测代理配置信息... ${Font}"
-    [[ -f ${trojan_conf} && $trojan_tcp_mode = true && $trojan_stat = "installed" ]] &&
-        tjport=$(grep '"local_port"' ${trojan_conf} | sed -r 's/.*: (.*),.*/\1/') &&
-        tjpassword=$(grep '"password"' ${trojan_conf} | awk -F '"' '{print $4}') &&
-        [[ $tjport != "$trojan_tcp_port" ]] && echo -e "${Error} ${RedBG} 检测到 Trojan-Go TCP 分流端口配置异常 ${Font}"
 
-    [[ -f ${trojan_conf} && $trojan_ws_mode = true && $trojan_stat = "installed" ]] &&
-        tjwspath=$(grep '"path":' ${trojan_conf} | awk -F '"' '{print $4}') &&
-        tjwshost=$(grep '"host":' ${trojan_conf} | awk -F '"' '{print $4}') &&
-        [[ $tjport != "$trojan_ws_port" ]] && echo -e "${Error} ${RedBG} 检测到 Trojan-Go WS 分流端口配置异常 ${Font}"
-
-    [[ -f ${v2ray_conf} && $v2ray_tcp_mode = "vmess" && $v2ray_stat = "installed" ]] &&
-        v2port=$(jq -r '[.inbounds[] | select(.protocol=="vmess") | select(.streamSettings.network=="tcp") | .port][0]' ${v2ray_conf}) &&
-        VMTID=$(jq -r '[.inbounds[] | select(.protocol=="vmess") | select(.streamSettings.network=="tcp") | .settings.clients[].id][0]' ${v2ray_conf}) &&
-        VMAID=$(jq -r '[.inbounds[] | select(.protocol=="vmess") | select(.streamSettings.network=="tcp") | .settings.clients[].alterId][0]' ${v2ray_conf})
-    [[ -f ${v2ray_conf} && $v2ray_tcp_mode = "vless" && $v2ray_stat = "installed" ]] &&
-        v2port=$(jq -r '[.inbounds[] | select(.protocol=="vless") | select(.streamSettings.network=="tcp") | .port][0]' ${v2ray_conf}) &&
-        VLTID=$(jq -r '[.inbounds[] | select(.protocol=="vless") | select(.streamSettings.network=="tcp") | .settings.clients[].id][0]' ${v2ray_conf})
-    [[ -f ${v2ray_conf} && $v2ray_ws_mode = "vmess" && $v2ray_stat = "installed" ]] &&
-        v2wsport=$(jq -r '[.inbounds[] | select(.protocol=="vmess") | select(.streamSettings.network=="ws") | .port][0]' ${v2ray_conf}) &&
-        v2wspath=$(jq -r '[.inbounds[] | select(.protocol=="vmess") | select(.streamSettings.network=="ws") | .streamSettings.wsSettings.path][0]' ${v2ray_conf}) &&
-        VMWSID=$(jq -r '[.inbounds[] | select(.protocol=="vmess") | select(.streamSettings.network=="ws") | .settings.clients[].id][0]' ${v2ray_conf}) &&
-        VMWSAID=$(jq -r '[.inbounds[] | select(.protocol=="vmess") | select(.streamSettings.network=="ws") | .settings.clients[].alterId][0]' ${v2ray_conf})
-    [[ -f ${v2ray_conf} && $v2ray_ws_mode = "vless" && $v2ray_stat = "installed" ]] &&
-        v2wsport=$(jq -r '[.inbounds[] | select(.protocol=="vless") | select(.streamSettings.network=="ws") | .port][0]' ${v2ray_conf}) &&
-        v2wspath=$(jq -r '[.inbounds[] | select(.protocol=="vless") | select(.streamSettings.network=="ws") | .streamSettings.wsSettings.path][0]' ${v2ray_conf}) &&
-        VLWSID=$(jq -r '[.inbounds[] | select(.protocol=="vless") | select(.streamSettings.network=="ws") | .settings.clients[].id][0]' ${v2ray_conf})
+    if [[ -f ${trojan_conf} && $trojan_stat = "installed" ]]; then
+        tjport=$(grep '"local_port"' ${trojan_conf} | sed -r 's/.*: (.*),.*/\1/')
+        tjpassword=$(grep '"password"' ${trojan_conf} | awk -F '"' '{print $4}')
+        [[ $trojan_ws_mode = true ]] && tjwspath=$(grep '"path":' ${trojan_conf} | awk -F '"' '{print $4}') &&
+            tjwshost=$(grep '"host":' ${trojan_conf} | awk -F '"' '{print $4}')
+        [[ $trojan_tcp_mode = true && $tjport != "$trojan_tcp_port" ]] && echo -e "${Error} ${RedBG} 检测到 Trojan-Go TCP 端口分流配置异常 ${Font}" && tsp_config_stat="mismatched"
+        [[ $trojan_ws_mode = true && $tjport != "$trojan_ws_port" ]] && echo -e "${Error} ${RedBG} 检测到 Trojan-Go WS 端口分流配置异常 ${Font}" && tsp_config_stat="mismatched"
+        [[ $trojan_ws_mode = true && $tjwspath != "$trojan_ws_path" ]] && echo -e "${Error} ${RedBG} 检测到 Trojan-Go WS 路径分流配置异常 ${Font}" && tsp_config_stat="mismatched"
+        [[ $tsp_config_stat = "mismatched" ]] && echo -e "${Error} ${RedBG} 检测到分流配置不一致，将尝试自动同步修复... ${Font}" && tsp_sync
+    fi
 
     if [[ -f ${v2ray_conf} && $v2ray_stat = "installed" ]]; then
-        [[ $v2ray_tcp_mode = v*ess && $v2port != "$v2ray_tcp_port" ]] && echo -e "${Error} ${RedBG} 检测到 V2Ray TCP 分流端口配置异常 ${Font}"
-        [[ $v2ray_ws_mode = v*ess && $v2wsport != "$v2ray_ws_port" ]] && echo -e "${Error} ${RedBG} 检测到 V2Ray WS 分流端口配置异常 ${Font}"
-        [[ $v2ray_ws_mode = v*ess && $v2wspath != "$v2ray_ws_path" ]] && echo -e "${Error} ${RedBG} 检测到 V2Ray WS 路径分流配置异常 ${Font}"
+        [[ $v2ray_tcp_mode = "vmess" ]] &&
+            v2port=$(jq -r '[.inbounds[] | select(.protocol=="vmess") | select(.streamSettings.network=="tcp") | .port][0]' ${v2ray_conf}) &&
+            VMTID=$(jq -r '[.inbounds[] | select(.protocol=="vmess") | select(.streamSettings.network=="tcp") | .settings.clients[].id][0]' ${v2ray_conf}) &&
+            VMAID=$(jq -r '[.inbounds[] | select(.protocol=="vmess") | select(.streamSettings.network=="tcp") | .settings.clients[].alterId][0]' ${v2ray_conf})
+        [[ $v2ray_tcp_mode = "vless" ]] &&
+            v2port=$(jq -r '[.inbounds[] | select(.protocol=="vless") | select(.streamSettings.network=="tcp") | .port][0]' ${v2ray_conf}) &&
+            VLTID=$(jq -r '[.inbounds[] | select(.protocol=="vless") | select(.streamSettings.network=="tcp") | .settings.clients[].id][0]' ${v2ray_conf})
+        [[ $v2ray_ws_mode = "vmess" ]] &&
+            v2wsport=$(jq -r '[.inbounds[] | select(.protocol=="vmess") | select(.streamSettings.network=="ws") | .port][0]' ${v2ray_conf}) &&
+            v2wspath=$(jq -r '[.inbounds[] | select(.protocol=="vmess") | select(.streamSettings.network=="ws") | .streamSettings.wsSettings.path][0]' ${v2ray_conf}) &&
+            VMWSID=$(jq -r '[.inbounds[] | select(.protocol=="vmess") | select(.streamSettings.network=="ws") | .settings.clients[].id][0]' ${v2ray_conf}) &&
+            VMWSAID=$(jq -r '[.inbounds[] | select(.protocol=="vmess") | select(.streamSettings.network=="ws") | .settings.clients[].alterId][0]' ${v2ray_conf})
+        [[ $v2ray_ws_mode = "vless" ]] &&
+            v2wsport=$(jq -r '[.inbounds[] | select(.protocol=="vless") | select(.streamSettings.network=="ws") | .port][0]' ${v2ray_conf}) &&
+            v2wspath=$(jq -r '[.inbounds[] | select(.protocol=="vless") | select(.streamSettings.network=="ws") | .streamSettings.wsSettings.path][0]' ${v2ray_conf}) &&
+            VLWSID=$(jq -r '[.inbounds[] | select(.protocol=="vless") | select(.streamSettings.network=="ws") | .settings.clients[].id][0]' ${v2ray_conf})
+        [[ $v2ray_tcp_mode = v*ess && $v2port != "$v2ray_tcp_port" ]] && echo -e "${Error} ${RedBG} 检测到 V2Ray TCP 端口分流配置异常 ${Font}" && tsp_config_stat="mismatched"
+        [[ $v2ray_ws_mode = v*ess && $v2wsport != "$v2ray_ws_port" ]] && echo -e "${Error} ${RedBG} 检测到 V2Ray WS 端口分流配置异常 ${Font}" && tsp_config_stat="mismatched"
+        [[ $v2ray_ws_mode = v*ess && $v2wspath != "$v2ray_ws_path" ]] && echo -e "${Error} ${RedBG} 检测到 V2Ray WS 路径分流配置异常 ${Font}" && tsp_config_stat="mismatched"
+        [[ $tsp_config_stat = "mismatched" ]] && echo -e "${Error} ${RedBG} 检测到分流配置不一致，将尝试自动同步修复... ${Font}" && tsp_sync
         if [[ $v2ray_tcp_mode = "vmess" || $v2ray_ws_mode = "vmess" ]]; then
             if [[ "${ID}" == "centos" ]]; then
                 systemctl is-active "chronyd" &>/dev/null || chrony_stat=inactive
@@ -948,7 +952,7 @@ deployed_status_check() {
             fi
         fi
     fi
-
+    
     [[ -f ${trojan_conf} || -f ${v2ray_conf} || $trojan_stat = "installed" || $v2ray_stat = "installed" ]] && menu_req_check docker
     [[ $trojan_stat = "installed" && ! -f $trojan_conf ]] && echo -e "\n${Error} ${RedBG} 检测到 Trojan-Go 代理配置异常，以下选项功能将被屏蔽，请尝试重装修复后重试... ${Font}" &&
         echo -e "${WARN} ${Yellow}[屏蔽] Trojan-Go 配置修改${Font}"
@@ -972,73 +976,68 @@ deployed_status_check() {
 
     [[ $debug = "enable" ]] && echo -e "\n Trojan-Go 代理：TCP：${Green}${trojan_tcp_mode}${Font} / WebSocket：${Green}${trojan_ws_mode}${Font}\n     V2Ray 代理：TCP：${Green}${v2ray_tcp_mode}${Font} / WebSocket：${Green}${v2ray_ws_mode}${Font}" &&
         echo -e "\n 代理容器：Trojan-Go：${Green}${trojan_stat}${Font} / V2Ray：${Green}${v2ray_stat}${Font}" &&
-        echo -e " 其他容器：WatchTower：${Green}${watchtower_stat}${Font} / Portainer：${Green}${portainer_stat}${Font}"
+        echo -e " 其他容器：WatchTower：${Green}${watchtower_stat}${Font} / Portainer：${Green}${portainer_stat}${Font}\n"
 }
 
 info() {
     deployed_status_check
     echo -e "\n————————————————————分流配置信息————————————————————"
-    [ -f ${tsp_conf} ] && echo -e "TLS-Shunt-Proxy $(/usr/local/bin/tls-shunt-proxy --version 2>&1 | awk 'NR==1{gsub(/"/,"");print $3}')" &&
-        echo -e "服务器TLS端口: ${TSP_Port}" && echo -e "服务器TLS域名: ${TSP_Domain}"
-    [ -f ${tsp_conf} ] && [[ $trojan_tcp_mode = true ]] && echo -e "Trojan-Go TCP 分流端口: $trojan_tcp_port"
-    [ -f ${tsp_conf} ] && [[ $trojan_ws_mode = true ]] && echo -e "Trojan-Go WebSocket 分流端口: $trojan_ws_port" &&
-        echo -e "Trojan-Go WebSocket 分流路径: $trojan_ws_path"
-    [ -f ${tsp_conf} ] && [[ $v2ray_tcp_mode = v*ess ]] && echo -e "V2Ray TCP 分流端口: $v2ray_tcp_port"
-    [ -f ${tsp_conf} ] && [[ $v2ray_ws_mode = v*ess ]] && echo -e "V2Ray WebSocket 分流端口: $v2ray_ws_port" &&
-        echo -e "V2Ray WebSocket 分流路径: $v2ray_ws_path"
+    if [ -f ${tsp_conf} ]; then
+        echo -e "TLS-Shunt-Proxy $(/usr/local/bin/tls-shunt-proxy --version 2>&1 | awk 'NR==1{gsub(/"/,"");print $3}')" &&
+            echo -e "服务器TLS端口: ${TSP_Port}" && echo -e "服务器TLS域名: ${TSP_Domain}"
+        [[ $trojan_tcp_mode = true ]] && echo -e "Trojan-Go TCP 分流端口: $trojan_tcp_port"
+        [[ $trojan_ws_mode = true ]] && echo -e "Trojan-Go WebSocket 分流端口: $trojan_ws_port" &&
+            echo -e "Trojan-Go WebSocket 分流路径: $trojan_ws_path"
+        [[ $v2ray_tcp_mode = v*ess ]] && echo -e "V2Ray TCP 分流端口: $v2ray_tcp_port"
+        [[ $v2ray_ws_mode = v*ess ]] && echo -e "V2Ray WebSocket 分流端口: $v2ray_ws_port" &&
+            echo -e "V2Ray WebSocket 分流路径: $v2ray_ws_path"
+    fi
 
-    [[ -f ${trojan_conf} && $trojan_stat = "installed" ]] && echo -e "—————————————————— Trojan-Go 配置 ——————————————————" &&
-        echo -e "$(docker exec Trojan-Go sh -c 'trojan-go --version' 2>&1 | awk 'NR==1{gsub(/"/,"");print}')"
+    if [[ -f ${trojan_conf} && $trojan_stat = "installed" ]]; then
+        echo -e "—————————————————— Trojan-Go 配置 ——————————————————" &&
+            echo -e "$(docker exec Trojan-Go sh -c 'trojan-go --version' 2>&1 | awk 'NR==1{gsub(/"/,"");print}')"
+        [[ $trojan_tcp_mode = true ]] &&
+            echo -e "Trojan-Go 监听端口: $tjport" && echo -e "Trojan-Go 密码: ${tjpassword}"
+        [[ $trojan_ws_mode = true ]] &&
+            echo -e "Trojan-Go WebSocket Path: ${tjwspath}" && echo -e "Trojan-Go WebSocket Host: ${tjwshost}"
+        [[ $trojan_tcp_mode = true ]] && echo -e "\n Trojan-Go TCP TLS 分享链接：" &&
+            echo -e " （通用）格式：\n trojan://${tjpassword}@${TSP_Domain}:${TSP_Port}?sni=${TSP_Domain}&peer=${TSP_Domain}&allowinsecure=0&mux=0#${HOSTNAME}-TCP" &&
+            echo -e " （Qv2Ray）格式：\n trojan-go://${tjpassword}@${TSP_Domain}:${TSP_Port}/?sni=${TSP_Domain}&type=original&host=${TSP_Domain}#${HOSTNAME}-TCP" &&
+            echo -e " （通用格式二维码）：" &&
+            qrencode -t utf8 -s 1 "trojan://${tjpassword}@${TSP_Domain}:${TSP_Port}?sni=${TSP_Domain}&peer=${TSP_Domain}&allowinsecure=0&mux=0#${HOSTNAME}-TCP"
+        [[ $trojan_ws_mode = true ]] && echo -e "\n Trojan-Go WebSocket TLS 分享链接：" &&
+            echo -e " （Trojan-Qt5）格式：\n trojan://${tjpassword}@${TSP_Domain}:${TSP_Port}?sni=${TSP_Domain}&peer=${TSP_Domain}&allowinsecure=0&mux=1&ws=1&wspath=${tjwspath}&wshost=${TSP_Domain}#${HOSTNAME}-WS" &&
+            echo -e " （Qv2Ray）格式：\n trojan-go://${tjpassword}@${TSP_Domain}:${TSP_Port}/?sni=${TSP_Domain}&type=ws&host=${TSP_Domain}&path=${tjwspath}#${HOSTNAME}-WS" &&
+            echo -e " （Shadowrocket格式二维码）：" &&
+            qrencode -t utf8 -s 1 "trojan://${tjpassword}@${TSP_Domain}:${TSP_Port}?peer=${TSP_Domain}&mux=1&plugin=obfs-local;obfs=websocket;obfs-host=${TSP_Domain};obfs-uri=${tjwspath}#${HOSTNAME}-WS"
+    fi
 
-    [[ -f ${trojan_conf} && $trojan_tcp_mode = true && $trojan_stat = "installed" ]] &&
-        echo -e "Trojan-Go 监听端口: $tjport" && echo -e "Trojan-Go 密码: ${tjpassword}"
-    [[ -f ${trojan_conf} && $trojan_ws_mode = true && $trojan_stat = "installed" ]] &&
-        echo -e "Trojan-Go WebSocket Path: ${tjwspath}" && echo -e "Trojan-Go WebSocket Host: ${tjwshost}"
-
-    [[ -f ${trojan_conf} && $trojan_tcp_mode = true && $trojan_stat = "installed" ]] && echo -e "\n Trojan-Go TCP TLS 分享链接：" &&
-        echo -e " （通用）格式：\n trojan://${tjpassword}@${TSP_Domain}:${TSP_Port}?sni=${TSP_Domain}&peer=${TSP_Domain}&allowinsecure=0&mux=0#${HOSTNAME}-TCP" &&
-        echo -e " （Qv2Ray）格式：\n trojan-go://${tjpassword}@${TSP_Domain}:${TSP_Port}/?sni=${TSP_Domain}&type=original&host=${TSP_Domain}#${HOSTNAME}-TCP" &&
-        echo -e " （通用格式二维码）：" &&
-        qrencode -t utf8 -s 1 "trojan://${tjpassword}@${TSP_Domain}:${TSP_Port}?sni=${TSP_Domain}&peer=${TSP_Domain}&allowinsecure=0&mux=0#${HOSTNAME}-TCP"
-
-    [[ -f ${trojan_conf} && $trojan_ws_mode = true && $trojan_stat = "installed" ]] && echo -e "\n Trojan-Go WebSocket TLS 分享链接：" &&
-        echo -e " （Trojan-Qt5）格式：\n trojan://${tjpassword}@${TSP_Domain}:${TSP_Port}?sni=${TSP_Domain}&peer=${TSP_Domain}&allowinsecure=0&mux=1&ws=1&wspath=${tjwspath}&wshost=${TSP_Domain}#${HOSTNAME}-WS" &&
-        echo -e " （Qv2Ray）格式：\n trojan-go://${tjpassword}@${TSP_Domain}:${TSP_Port}/?sni=${TSP_Domain}&type=ws&host=${TSP_Domain}&path=${tjwspath}#${HOSTNAME}-WS" &&
-        echo -e " （Shadowrocket格式二维码）：" &&
-        qrencode -t utf8 -s 1 "trojan://${tjpassword}@${TSP_Domain}:${TSP_Port}?peer=${TSP_Domain}&mux=1&plugin=obfs-local;obfs=websocket;obfs-host=${TSP_Domain};obfs-uri=${tjwspath}#${HOSTNAME}-WS"
-
-    [[ -f ${v2ray_conf} && $v2ray_stat = "installed" ]] && echo -e "\n———————————————————— V2Ray 配置 ————————————————————" &&
-        echo -e "$(docker exec V2Ray sh -c 'v2ray --version' 2>&1 | awk 'NR==1{gsub(/"/,"");print}')"
-
-    [[ -f ${v2ray_conf} && $v2ray_tcp_mode = "vmess" && $v2ray_stat = "installed" ]] &&
-        echo -e "VMess TCP 监听端口: $v2port" && echo -e "VMess TCP UUID: ${VMTID}" &&
-        echo -e "VMess AlterID: ${VMAID}" && echo -e "VMess 加密方式: Auto" && echo -e "VMess Host: ${TSP_Domain}"
-
-    [[ -f ${v2ray_conf} && $v2ray_tcp_mode = "vless" && $v2ray_stat = "installed" ]] &&
-        echo -e "VLESS TCP 监听端口: $v2port" && echo -e "VLESS TCP UUID: ${VLTID}" &&
-        echo -e "VLESS 加密方式: none" && echo -e "VLESS Host: ${TSP_Domain}"
-
-    [[ -f ${v2ray_conf} && $v2ray_ws_mode = "vmess" && $v2ray_stat = "installed" ]] &&
-        echo -e "VMess WS 监听端口: $v2wsport" && echo -e "VMess WS UUID: ${VMWSID}" && echo -e "VMess AlterID: $VMWSAID" &&
-        echo -e "VMess 加密方式: Auto" && echo -e "VMess WebSocket Host: ${TSP_Domain}" && echo -e "VMess WebSocket Path: ${v2wspath}"
-
-    [[ -f ${v2ray_conf} && $v2ray_ws_mode = "vless" && $v2ray_stat = "installed" ]] &&
-        echo -e "VLESS WS 监听端口: $v2wsport" && echo -e "VLESS WS UUID: ${VLWSID}" &&
-        echo -e "VLESS 加密方式: none" && echo -e "VLESS WebSocket Host: ${TSP_Domain}" && echo -e "VLESS WebSocket Path: ${v2wspath}"
-
-    [[ -f ${v2ray_conf} && $v2ray_tcp_mode = "vmess" && $v2ray_stat = "installed" ]] && echo -e "\n VMess TCP TLS 分享链接：" &&
-        echo -e " （V2RayN 格式）：\n vmess://$(echo "{\"add\":\"${TSP_Domain}\",\"aid\":\"6\",\"host\":\"${TSP_Domain}\",\"peer\":\"${TSP_Domain}\",\"id\":\"${VMTID}\",\"net\":\"tcp\",\"port\":\"${TSP_Port}\",\"ps\":\"${HOSTNAME}-TCP\",\"tls\":\"tls\",\"type\":\"none\",\"v\":\"2\"}" | base64 -w 0)" &&
-        echo -e " （Shadowrocket格式二维码）：" &&
-        qrencode -t utf8 -s 1 "vmess://$(echo "auto:${VMTID}@${TSP_Domain}:${TSP_Port}" | base64 -w 0)?tls=1&mux=1&peer=${TSP_Domain}&allowInsecure=0&tfo=0&remarks=${HOSTNAME}-TCP"
-
-    [[ -f ${v2ray_conf} && $v2ray_ws_mode = "vmess" && $v2ray_stat = "installed" ]] && echo -e "\n VMess WebSocket TLS 分享链接：" &&
-        echo -e " （V2RayN 格式）：\n vmess://$(echo "{\"add\":\"${TSP_Domain}\",\"aid\":\"6\",\"host\":\"${TSP_Domain}\",\"peer\":\"${TSP_Domain}\",\"id\":\"${VMWSID}\",\"net\":\"ws\",\"path\":\"${v2wspath}\",\"port\":\"${TSP_Port}\",\"ps\":\"${HOSTNAME}-WS\",\"tls\":\"tls\",\"type\":\"none\",\"v\":\"2\"}" | base64 -w 0)" &&
-        echo -e " （Shadowrocket格式二维码）：" &&
-        qrencode -t utf8 -s 1 "vmess://$(echo "auto:${VMWSID}@${TSP_Domain}:${TSP_Port}" | base64 -w 0)?tls=1&mux=1&peer=${TSP_Domain}&allowInsecure=0&tfo=0&remarks=${HOSTNAME}-WS&obfs=websocket&obfsParam=${TSP_Domain}&path=${v2wspath}"
-
-    [[ -f ${v2ray_conf} && $v2ray_tcp_mode = "vless" && $v2ray_stat = "installed" ]] && echo -e "\n VLESS TCP TLS 分享链接："
-
-    [[ -f ${v2ray_conf} && $v2ray_ws_mode = "vless" && $v2ray_stat = "installed" ]] && echo -e "\n VLESS WebSocket TLS 分享链接："
+    if [[ -f ${v2ray_conf} && $v2ray_stat = "installed" ]]; then
+        echo -e "\n———————————————————— V2Ray 配置 ————————————————————" &&
+            echo -e "$(docker exec V2Ray sh -c 'v2ray --version' 2>&1 | awk 'NR==1{gsub(/"/,"");print}')"
+        [[ $v2ray_tcp_mode = "vmess" ]] &&
+            echo -e "VMess TCP 监听端口: $v2port" && echo -e "VMess TCP UUID: ${VMTID}" &&
+            echo -e "VMess AlterID: ${VMAID}" && echo -e "VMess 加密方式: Auto" && echo -e "VMess Host: ${TSP_Domain}"
+        [[ $v2ray_tcp_mode = "vless" ]] &&
+            echo -e "VLESS TCP 监听端口: $v2port" && echo -e "VLESS TCP UUID: ${VLTID}" &&
+            echo -e "VLESS 加密方式: none" && echo -e "VLESS Host: ${TSP_Domain}"
+        [[ $v2ray_ws_mode = "vmess" ]] &&
+            echo -e "VMess WS 监听端口: $v2wsport" && echo -e "VMess WS UUID: ${VMWSID}" && echo -e "VMess AlterID: $VMWSAID" &&
+            echo -e "VMess 加密方式: Auto" && echo -e "VMess WebSocket Host: ${TSP_Domain}" && echo -e "VMess WebSocket Path: ${v2wspath}"
+        [[ $v2ray_ws_mode = "vless" ]] &&
+            echo -e "VLESS WS 监听端口: $v2wsport" && echo -e "VLESS WS UUID: ${VLWSID}" &&
+            echo -e "VLESS 加密方式: none" && echo -e "VLESS WebSocket Host: ${TSP_Domain}" && echo -e "VLESS WebSocket Path: ${v2wspath}"
+        [[ $v2ray_tcp_mode = "vmess" ]] && echo -e "\n VMess TCP TLS 分享链接：" &&
+            echo -e " （V2RayN 格式）：\n vmess://$(echo "{\"add\":\"${TSP_Domain}\",\"aid\":\"6\",\"host\":\"${TSP_Domain}\",\"peer\":\"${TSP_Domain}\",\"id\":\"${VMTID}\",\"net\":\"tcp\",\"port\":\"${TSP_Port}\",\"ps\":\"${HOSTNAME}-TCP\",\"tls\":\"tls\",\"type\":\"none\",\"v\":\"2\"}" | base64 -w 0)" &&
+            echo -e " （Shadowrocket格式二维码）：" &&
+            qrencode -t utf8 -s 1 "vmess://$(echo "auto:${VMTID}@${TSP_Domain}:${TSP_Port}" | base64 -w 0)?tls=1&mux=1&peer=${TSP_Domain}&allowInsecure=0&tfo=0&remarks=${HOSTNAME}-TCP"
+        [[ $v2ray_ws_mode = "vmess" ]] && echo -e "\n VMess WebSocket TLS 分享链接：" &&
+            echo -e " （V2RayN 格式）：\n vmess://$(echo "{\"add\":\"${TSP_Domain}\",\"aid\":\"6\",\"host\":\"${TSP_Domain}\",\"peer\":\"${TSP_Domain}\",\"id\":\"${VMWSID}\",\"net\":\"ws\",\"path\":\"${v2wspath}\",\"port\":\"${TSP_Port}\",\"ps\":\"${HOSTNAME}-WS\",\"tls\":\"tls\",\"type\":\"none\",\"v\":\"2\"}" | base64 -w 0)" &&
+            echo -e " （Shadowrocket格式二维码）：" &&
+            qrencode -t utf8 -s 1 "vmess://$(echo "auto:${VMWSID}@${TSP_Domain}:${TSP_Port}" | base64 -w 0)?tls=1&mux=1&peer=${TSP_Domain}&allowInsecure=0&tfo=0&remarks=${HOSTNAME}-WS&obfs=websocket&obfsParam=${TSP_Domain}&path=${v2wspath}"
+        [[ $v2ray_tcp_mode = "vless" ]] && echo -e "\n VLESS TCP TLS 分享链接："
+        [[ $v2ray_ws_mode = "vless" ]] && echo -e "\n VLESS WebSocket TLS 分享链接："
+    fi
 
     echo -e "\n————————————————————————————————————————————————————\n"
     read -t 60 -n 1 -s -rp "按任意键继续（60s）..."
