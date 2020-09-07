@@ -6,6 +6,7 @@
 [![Codacy Badge](https://app.codacy.com/project/badge/Grade/e30f6ade06144d6b91e50b073bf35b7c)](https://www.codacy.com/manual/h31105/trojan_v2_docker_onekey?utm_source=github.com&utm_medium=referral&utm_content=h31105/trojan_v2_docker_onekey&utm_campaign=Badge_Grade)
 ![GitHub release (latest by date)](https://img.shields.io/github/v/release/h31105/trojan_v2_docker_onekey?style=flat)
 ![GitHub forks](https://img.shields.io/github/forks/h31105/trojan_v2_docker_onekey?style=flat)
+![jsDelivr hits (GitHub)](https://img.shields.io/jsdelivr/gh/hm/h31105/trojan_v2_docker_onekey)
 ![Visitors](https://visitor-badge.glitch.me/badge?page_id=h31105.trojan_v2_docker_onekey)
 
 基于 Docker 容器架构的 Trojan-Go/VLESS/VMess-TCP/WS-TLS 分流部署&管理脚本
@@ -14,17 +15,8 @@
 
 ## 使用简介
 
--   最新版：
-
 ```Bash
 wget -N --no-check-certificate -q "https://cdn.jsdelivr.net/gh/h31105/trojan_v2_docker_onekey/deploy.sh" && \
-chmod +x deploy.sh && bash deploy.sh
-```
-
--   老版本：（不支持 VLESS 协议 & Trojan-Go WebSocket 配置）
-
-```Bash
-wget -N --no-check-certificate -q "https://cdn.jsdelivr.net/gh/h31105/trojan_v2_docker_onekey@1.00/deploy.sh" && \
 chmod +x deploy.sh && bash deploy.sh
 ```
 
