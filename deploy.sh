@@ -287,7 +287,7 @@ trojan_reset() {
     trojan_tcp_mode=true
     tjport=$((RANDOM % 6666 + 10000)) && echo -e "${OK} ${GreenBG} Trojan-Go 监听端口为: $tjport ${Font}"
     mkdir -p $trojan_conf_dir
-    cat >/etc/trojan-go/config.json <<-EOF
+    cat >$trojan_conf <<-EOF
 {
     "run_type": "server",
     "disable_http_check": true,
@@ -402,7 +402,7 @@ v2ray_reset() {
     config_exist_check ${v2ray_conf}
     [[ -f ${v2ray_conf} ]] && rm -rf ${v2ray_conf}
     mkdir -p $v2ray_conf_dir
-    cat >$v2ray_conf_dir/config.json <<-EOF
+    cat >$v2ray_conf <<-EOF
 {
     "log": {
         "loglevel": "warning"
@@ -569,7 +569,11 @@ install_docker() {
 
 install_tsp() {
     bash <(curl -L -s https://raw.githubusercontent.com/liberal-boy/tls-shunt-proxy/master/dist/install.sh)
-    rm -rf $tsp_conf && cat >$tsp_conf <<-EOF
+    judge "下载 TLS-Shunt-Proxy"
+    config_exist_check ${tsp_conf}
+    [[ -f ${tsp_conf} ]] && rm -rf ${tsp_conf}
+    mkdir -p $tsp_conf_dir
+    cat >$tsp_conf <<-EOF
 #TSP_CFG_Ver:${tsp_cfg_version}
 listen: 0.0.0.0:${tspport} #TSP_Port
 redirecthttps: 0.0.0.0:80
@@ -602,7 +606,7 @@ EOF
     judge "安装 TLS-Shunt-Proxy"
     systemctl daemon-reload && systemctl reset-failed
     systemctl enable tls-shunt-proxy && systemctl restart tls-shunt-proxy
-    judge "TLS-Shunt-Proxy 启动"
+    judge "启动 TLS-Shunt-Proxy"
 }
 
 modify_tsp() {
