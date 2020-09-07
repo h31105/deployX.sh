@@ -70,9 +70,6 @@ trojan_conf="${trojan_conf_dir}/config.json"
 v2ray_conf="${v2ray_conf_dir}/config.json"
 web_dir="/home/wwwroot"
 
-#简易随机数
-random_num=$((RANDOM % 3 + 7))
-
 #shellcheck disable=SC1091
 source '/etc/os-release'
 
@@ -155,25 +152,13 @@ chrony_install() {
 }
 
 dependency_install() {
-    ${INS} install wget git lsof -y
-    ${INS} -y install bc
-    judge "安装 bc"
-    ${INS} -y install unzip
-    judge "安装 unzip"
-    ${INS} -y install curl
-    judge "安装 curl"
-    ${INS} -y install jq
-    judge "安装 jq"
-    ${INS} -y install moreutils
-    judge "安装 moreutils"
-    ${INS} -y install qrencode
-    judge "安装 qrencode"
+    ${INS} install curl git lsof unzip -y
     ${INS} -y install haveged
-    if [[ "${ID}" == "centos" ]]; then
-        systemctl start haveged && systemctl enable haveged
-    else
-        systemctl start haveged && systemctl enable haveged
-    fi
+    systemctl start haveged && systemctl enable haveged
+    command -v bc > /dev/null 2>&1 || ${INS} -y install bc && judge "安装 bc"
+    command -v jq > /dev/null 2>&1 || ${INS} -y install jq && judge "安装 jq"
+    command -v sponge > /dev/null 2>&1 || ${INS} -y install moreutils && judge "安装 moreutils"
+    command -v qrencode > /dev/null 2>&1 || ${INS} -y install qrencode && judge "安装 qrencode"
 }
 
 basic_optimization() {
@@ -201,17 +186,17 @@ domain_port_check() {
     read -rp "请输入TLS端口(默认443):" tspport
     [[ -z ${tspport} ]] && tspport="443"
     read -rp "请输入你的域名信息(例如:fk.gfw.com):" domain
-    domain_ip=$(ping "${domain}" -c 1 | sed '1{s/[^(]*(//;s/).*//;q}')
+    domain_ip=$(ping -q -c 1 -t 1 "${domain}" | grep PING | sed -e "s/).*//" | sed -e "s/.*(//")
     echo -e "${OK} ${GreenBG} 正在获取 公网ip 信息，请耐心等待 ${Font}"
     local_ip=$(curl -s https://api64.ipify.org)
     echo -e "域名DNS解析IP：${domain_ip}"
     echo -e "本机IP: ${local_ip}"
     sleep 2
-    if [[ $(echo "${local_ip}" | tr '.' '+' | bc) -eq $(echo "${domain_ip}" | tr '.' '+' | bc) ]]; then
+    if [[ "${local_ip}" = "${domain_ip}" ]]; then
         echo -e "${OK} ${GreenBG} 域名DNS解析IP 与 本机IP 匹配 ${Font}"
         sleep 2
     else
-        echo -e "${Error} ${RedBG} 请确保域名添加了正确的 A 记录，否则将无法正常连接 ${Font}"
+        echo -e "${Error} ${RedBG} 请确保域名添加了正确的 A/AAAA 记录，否则将无法正常连接 ${Font}"
         echo -e "${Error} ${RedBG} 域名DNS解析IP 与 本机IP 不匹配 是否继续安装？（Y/N）[N]${Font}" && read -r install
         case $install in
         [yY][eE][sS] | [yY])
@@ -874,6 +859,7 @@ deployed_status_check() {
     tsp_stat="none" && trojan_stat="none" && v2ray_stat="none" && watchtower_stat="none" && portainer_stat="none"
     trojan_tcp_mode="none" && v2ray_tcp_mode="none" && trojan_ws_mode="none" && v2ray_ws_mode="none"
     tsp_config_stat="synchronized"
+    random_num=$((RANDOM % 3 + 7))
 
     echo -e "${OK} ${GreenBG} 检测分流配置信息... ${Font}"
     [[ -f ${tsp_conf} || -f '/usr/local/bin/tls-shunt-proxy' ]] &&
