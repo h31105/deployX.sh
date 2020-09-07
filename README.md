@@ -16,7 +16,7 @@
 ## 使用简介
 
 ```Bash
-wget --no-check-certificate -q "https://cdn.jsdelivr.net/gh/h31105/trojan_v2_docker_onekey/deploy.sh" && \
+wget -N --no-check-certificate -q https://cdn.jsdelivr.net/gh/h31105/trojan_v2_docker_onekey/deploy.sh && \
 chmod +x deploy.sh && bash deploy.sh
 ```
 
