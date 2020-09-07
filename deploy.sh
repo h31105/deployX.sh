@@ -69,6 +69,7 @@ tsp_conf="${tsp_conf_dir}/config.yaml"
 trojan_conf="${trojan_conf_dir}/config.json"
 v2ray_conf="${v2ray_conf_dir}/config.json"
 web_dir="/home/wwwroot"
+random_num=$((RANDOM % 3 + 7))
 
 #shellcheck disable=SC1091
 source '/etc/os-release'
@@ -154,11 +155,12 @@ chrony_install() {
 dependency_install() {
     ${INS} install curl git lsof unzip -y
     ${INS} -y install haveged
+    judge "安装 haveged"
     systemctl start haveged && systemctl enable haveged
-    command -v bc > /dev/null 2>&1 || ${INS} -y install bc && judge "安装 bc"
-    command -v jq > /dev/null 2>&1 || ${INS} -y install jq && judge "安装 jq"
-    command -v sponge > /dev/null 2>&1 || ${INS} -y install moreutils && judge "安装 moreutils"
-    command -v qrencode > /dev/null 2>&1 || ${INS} -y install qrencode && judge "安装 qrencode"
+    command -v bc >/dev/null 2>&1 || (${INS} -y install bc && judge "安装 bc")
+    command -v jq >/dev/null 2>&1 || (${INS} -y install jq && judge "安装 jq")
+    command -v sponge >/dev/null 2>&1 || (${INS} -y install moreutils && judge "安装 moreutils")
+    command -v qrencode >/dev/null 2>&1 || (${INS} -y install qrencode && judge "安装 qrencode")
 }
 
 basic_optimization() {
@@ -618,7 +620,7 @@ modify_tsp() {
 
 tsp_sync() {
     echo -e "${OK} ${GreenBG} 检测并同步现有代理配置... ${Font}"
-    if [[ $trojan_stat = "installed" ]] && [[ -f ${trojan_conf} ]]; then
+    if [[ $trojan_stat = "installed" && -f ${trojan_conf} ]]; then
         tjport="$(grep '"local_port"' ${trojan_conf} | sed -r 's/.*: (.*),.*/\1/')" && trojan_tcp_mode=true &&
             tjwspath="$(grep '"path":' ${trojan_conf} | awk -F '"' '{print $4}')" && trojan_ws_mode="$(jq -r '.websocket.enabled' ${trojan_conf})"
         judge "检测 Trojan-Go 配置"
@@ -863,7 +865,6 @@ deployed_status_check() {
     tsp_stat="none" && trojan_stat="none" && v2ray_stat="none" && watchtower_stat="none" && portainer_stat="none"
     trojan_tcp_mode="none" && v2ray_tcp_mode="none" && trojan_ws_mode="none" && v2ray_ws_mode="none"
     tsp_config_stat="synchronized"
-    random_num=$((RANDOM % 3 + 7))
 
     echo -e "${OK} ${GreenBG} 检测分流配置信息... ${Font}"
     [[ -f ${tsp_conf} || -f '/usr/local/bin/tls-shunt-proxy' ]] &&
