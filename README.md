@@ -113,8 +113,3 @@ chmod +x deploy.sh && bash deploy.sh
 -   [Docker](https://www.docker.com/)
 -   [WatchTower](https://github.com/containrrr/watchtower)
 -   [Portainer](https://github.com/portainer/portainer)
-
-## License
-
-[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fh31105%2Ftrojan_v2_docker_onekey.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2Fh31105%2Ftrojan_v2_docker_onekey?ref=badge_large)
-[![H31105's github stats](https://github-readme-stats.vercel.app/api?username=h31105&count_private=true&show_icons=true)](https://github.com/h31105)
