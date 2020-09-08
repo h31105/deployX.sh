@@ -45,6 +45,9 @@ chmod +x deploy.sh && bash deploy.sh
 
 ## 部署建议
 
+脚本部署的完整架构拓扑如下图所示：
+<img src="https://raw.githubusercontent.com/h31105/trojan_v2_docker_onekey/master/docs/tp.png" width="100%" height="100%">
+
 -   TLS-Shunt-Proxy 负责证书全自动管理和网站服务（HTTPS 默认 443 HTTP 80 自动跳转）
 
 -   Trojan-Go 容器化部署 (支持 WebSocket)
@@ -57,7 +60,18 @@ chmod +x deploy.sh && bash deploy.sh
 
 -   Portainer 基于 Web 的 Docker 管理服务（可选）
 
-    \*Portainer 安装后，请尽快访问管理地址：http&#x3A;//&lt;server.domain.name>:9080，设置管理帐号和密码。 
+    \*Portainer 安装后，请尽快访问管理地址：<http://server.domain.name:9080> 设置管理帐号和密码。
+
+-   若需配置 CDN 加速，建议使用 CNAME 方式，CNAME 方式具有以下优点：
+
+    \*CDN 域名证书和 TSP 域名证书分别由 CDN 和 TSP 各自管理，可实现各自证书的自动更新。
+
+    \*可通过访问不同的域名来控制是否通过 CDN 加速，例如，访问 TSP 域名即为直连访问。
+
+**由于 CDN 加速仅支持 WebSocket 模式代理**，因此在开启 CDN 加速（CNAME 方式）的情况下，客户端代理配置需要做如下调整：
+
+-   TCP 模式代理 **直连**：使用脚本生成的代理配置信息即可。
+-   WebSocket 模式代理通过 **CDN 加速**：将脚本生成的代理配置信息中，“服务器地址” 设置为 CDN 域名，其他不变。 
 
 **注意** 本脚本为**单用户**配置，部署后可以**自行按需修改**代理配置内容，但修改后**不要**使用脚本菜单中的修改选项，修改选项会**重置**相关配置信息。部署后请按需**开启防火墙端口**，例如 HTTP 80、9080 及 HTTPS 443 端口。
 
