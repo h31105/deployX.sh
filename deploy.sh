@@ -155,7 +155,6 @@ chrony_install() {
 dependency_install() {
     ${INS} install curl git lsof unzip -y
     ${INS} -y install haveged
-    judge "安装 haveged"
     systemctl start haveged && systemctl enable haveged
     command -v bc >/dev/null 2>&1 || (${INS} -y install bc && judge "安装 bc")
     command -v jq >/dev/null 2>&1 || (${INS} -y install jq && judge "安装 jq")
