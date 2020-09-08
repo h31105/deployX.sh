@@ -7,7 +7,7 @@
 ![GitHub release (latest by date)](https://img.shields.io/github/v/release/h31105/trojan_v2_docker_onekey?style=flat)
 ![jsDelivr hits (GitHub)](https://img.shields.io/jsdelivr/gh/hm/h31105/trojan_v2_docker_onekey)
 ![Visitors](https://visitor-badge.glitch.me/badge?page_id=h31105.trojan_v2_docker_onekey)
-[![Chat on Telegram](https://img.shields.io/badge/Chat%20on-Telegram-brightgreen.svg)](https://t.me/trojanv2)
+[![Chat on Telegram](https://img.shields.io/badge/Chat%20-%20Telegram-brightgreen.svg)](https://t.me/trojanv2)
 
 基于 Docker 容器架构的 Trojan-Go/VLESS/VMess-TCP/WS-TLS 分流部署&管理脚本
 
