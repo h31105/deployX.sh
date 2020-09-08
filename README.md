@@ -5,7 +5,6 @@
 ![GitHub top language](https://img.shields.io/github/languages/top/h31105/trojan_v2_docker_onekey?style=flat)
 [![Codacy Badge](https://app.codacy.com/project/badge/Grade/e30f6ade06144d6b91e50b073bf35b7c)](https://www.codacy.com/manual/h31105/trojan_v2_docker_onekey?utm_source=github.com&utm_medium=referral&utm_content=h31105/trojan_v2_docker_onekey&utm_campaign=Badge_Grade)
 ![GitHub release (latest by date)](https://img.shields.io/github/v/release/h31105/trojan_v2_docker_onekey?style=flat)
-![GitHub forks](https://img.shields.io/github/forks/h31105/trojan_v2_docker_onekey?style=flat)
 ![jsDelivr hits (GitHub)](https://img.shields.io/jsdelivr/gh/hm/h31105/trojan_v2_docker_onekey)
 ![Visitors](https://visitor-badge.glitch.me/badge?page_id=h31105.trojan_v2_docker_onekey)
 [![Chat on Telegram](https://img.shields.io/badge/Chat%20on-Telegram-brightgreen.svg)](https://t.me/trojanv2)
