@@ -57,7 +57,7 @@ WARN="${Yellow}[警告]${Font}"
 Error="${Red}[错误]${Font}"
 
 #版本、初始化变量
-shell_version="1.161"
+shell_version="1.162"
 tsp_cfg_version="0.61.1"
 upgrade_mode="none"
 github_branch="master"
@@ -560,8 +560,8 @@ web_camouflage() {
 
 install_docker() {
     echo -e "${GreenBG} 开始安装 Docker 最新版本 ... ${Font}"
-    curl -fsSL https://get.docker.com -o get-docker.sh
-    sh get-docker.sh
+    curl -fsSL https://get.docker.com -o /tmp/get-docker.sh
+    sh /tmp/get-docker.sh
     judge "安装 Docker "
     systemctl daemon-reload
     systemctl enable docker && systemctl restart docker
@@ -746,6 +746,7 @@ uninstall_tsp() {
     systemctl stop tls-shunt-proxy && systemctl disable tls-shunt-proxy
     rm -rf /etc/systemd/system/tls-shunt-proxy.service
     rm -rf /usr/local/bin/tls-shunt-proxy
+    rm -rf /etc/ssl/tls-shunt-proxy/*
     rm -rf $tsp_conf_dir
     userdel -rf tls-shunt-proxy
     tsp_stat="none"
@@ -929,7 +930,7 @@ deployed_status_check() {
             fi
             if [[ $chrony_stat = inactive ]]; then
                 echo -e "${Error} ${RedBG} 检测到 Chrony 时间同步服务未启动，若系统时间不准确将会严重影响 V2Ray VMess 协议的可用性 ${Font}\n${WARN} ${Yellow} 当前系统时间:$(date)，请确认时间是否准确，误差范围±3分钟内 (Y/N) [Y]: ${Font}"
-                read -rp chrony_confirm
+                read -r chrony_confirm
                 [[ -z ${chrony_confirm} ]] && chrony_confirm="Y"
                 case $chrony_confirm in
                 [nN][oO] | [nN])
