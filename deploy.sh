@@ -570,7 +570,8 @@ install_docker() {
 
 install_tsp() {
     bash <(curl -L -s https://raw.githubusercontent.com/liberal-boy/tls-shunt-proxy/master/dist/install.sh)
-    judge "下载 TLS-Shunt-Proxy"
+    judge "安装 TLS-Shunt-Proxy"
+    chown -R /etc/ssl/tls-shunt-proxy
     config_exist_check ${tsp_conf}
     [[ -f ${tsp_conf} ]] && rm -rf ${tsp_conf}
     mkdir -p $tsp_conf_dir
@@ -604,7 +605,7 @@ vhosts:
       #handler: proxyPass #V2Ray_TCP
       #args: 127.0.0.1:40003;proxyProtocol #V2Ray_TCP_Port:${v2ray_tcp_mode}
 EOF
-    judge "安装 TLS-Shunt-Proxy"
+    judge "配置 TLS-Shunt-Proxy"
     systemctl daemon-reload && systemctl reset-failed
     systemctl enable tls-shunt-proxy && systemctl restart tls-shunt-proxy
     judge "启动 TLS-Shunt-Proxy"
@@ -746,7 +747,6 @@ uninstall_tsp() {
     systemctl stop tls-shunt-proxy && systemctl disable tls-shunt-proxy
     rm -rf /etc/systemd/system/tls-shunt-proxy.service
     rm -rf /usr/local/bin/tls-shunt-proxy
-    rm -rf /etc/ssl/tls-shunt-proxy/*
     rm -rf $tsp_conf_dir
     userdel -rf tls-shunt-proxy
     tsp_stat="none"
