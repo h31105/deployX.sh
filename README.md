@@ -68,7 +68,7 @@ chmod +x deploy.sh && bash deploy.sh
 
     \*关于开启 CDN 加速，需要注意以下几点：
 
-    1.  仅需在**直连线路**状况不太理想的情况下开启，否则开启 CDN **并不会**带来加速效果。
+    1.  仅需在**直连线路状况不太理想**的情况下开启，否则开启 CDN **并不一定会**带来加速效果。
 
     2.  CDN 加速开启后，TSP 所管理的证书**可能无法完成自动续签**，应对办法：
 
@@ -79,7 +79,7 @@ chmod +x deploy.sh && bash deploy.sh
         journalctl -u tls-shunt-proxy.service --since today #查看日志，观察证书续签结果
         ```
 
-        \*如果域名解析服务商支持分线路设置 DNS 记录（例如 Aliyun、DNSpod），可通过设置**境外线路**解析为 VPS IP，其他线路解析为 CDN 记录来解决此问题。
+        \*如果您的域名解析服务支持**分线路**设置 DNS 记录（例如 Aliyun、DNSpod），可通过设置**境外线路**解析为 VPS IP，其他线路解析为 CDN 记录来解决此问题。
 
     3.  由于 CDN 加速**仅支持** WebSocket 模式代理，客户端需要根据脚本生成的配置信息做相应调整：
 
