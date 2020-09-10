@@ -7,7 +7,7 @@
 ![GitHub release (latest by date)](https://img.shields.io/github/v/release/h31105/trojan_v2_docker_onekey?style=flat)
 ![jsDelivr hits (GitHub)](https://img.shields.io/jsdelivr/gh/hm/h31105/trojan_v2_docker_onekey)
 ![Visitors](https://visitor-badge.glitch.me/badge?page_id=h31105.trojan_v2_docker_onekey)
-[![Chat on Telegram](https://img.shields.io/badge/Chat%20-%20Telegram-brightgreen.svg)](https://t.me/trojanv2)
+[![Chat on Telegram](https://img.shields.io/badge/chat%20-%20telegram-brightgreen.svg)](https://t.me/trojanv2)
 
 基于 Docker 容器架构的 Trojan-Go/VLESS/VMess-TCP/WS-TLS 分流部署&管理脚本
 
@@ -62,17 +62,36 @@ chmod +x deploy.sh && bash deploy.sh
 
     \*Portainer 安装后，请尽快访问管理地址：<http://server.domain.name:9080> 设置管理帐号和密码。
 
--   由于 TSP 的 SNI 分流特性，若需配置 CDN 加速，请使用 A 记录方式（域名 --A 记录--> VPS IP），CNAME 记录方式（域名 A --CNAME 记录--> 域名 B）的 CDN 配置不被支持（**无法通过 SNI 验证**）。
+-   由于 TSP 的 SNI 分流特性，若需配置 CDN 建议使用 A 记录方式，CNAME 方式不被支持。
 
-    \*开启 CDN 后，需要注意以下两点：
+    CDN 配置：域名 -- A 记录 --> VPS IP **#这里的域名与脚本部署时填写的 TLS 域名相同**
 
-    1.  TSP 所管理的证书将**无法完成自动续签**，请在证书过期前 30 天内，手动关闭 CDN 加速后重启 TSP（systemctl restart tls-shunt-proxy）完成证书续签。
+    \*关于开启 CDN 加速，需要注意以下几点：
 
-        \*如果域名解析服务商支持分线路设置 DNS 记录（例如 Aliyun、DNSpod），可通过设置**境外线路**解析为 VPS IP，其他线路解析为 CDN 记录来解决此问题。
+    1.  仅需在**直连线路状况不太理想**的情况下开启，否则开启 CDN **并不一定会**带来加速效果。
 
-    2.  CDN 加速**仅支持** WebSocket 模式代理，TCP 模式的代理需要将客户端 **“服务器地址”**设置为 VPS **IP 地址**或者任意**指向该 IP 地址的域名**（其他配置不变）才能正常使用。 
+    2.  CDN 加速开启后，TSP 所管理的证书**可能无法完成自动续签**，应对办法：
 
-**注意** 本脚本为**单用户**配置，部署后可以**自行按需修改**代理配置内容，但修改后**不要**使用脚本菜单中的修改选项，修改选项会**重置**相关配置信息。部署后请按需**开启防火墙端口**，例如 HTTP 80、9080 及 HTTPS 443 端口。
+        \*请在证书过期前 30 天内，手动暂停 CDN 加速后重启 TSP 完成证书续签。
+
+        ```Bash
+        systemctl restart tls-shunt-proxy #重启 TSP 触发证书续签
+        journalctl -u tls-shunt-proxy.service --since today #查看日志，观察证书续签结果
+        ```
+
+        \*如果您的域名解析服务支持**分线路**设置 DNS 记录（例如 Aliyun、DNSpod），可通过设置**境外线路**解析为 VPS IP，其他线路解析为 CDN 记录来解决此问题。
+
+    3.  由于 CDN **仅支持** 加速 WebSocket 模式代理，**在开启 CDN 加速后**，为确保所有模式代理均可正常使用，**客户端需要根据脚本生成的配置信息做相应调整**。
+
+        通过客户端服务器地址的不同配置，来控制是否通过 CDN 加速：
+
+        \*TCP 模式代理客户端（不通过 CDN 加速）服务器地址 (ServerAddress) 设置为**VPS IP 地址** 或 **任意指向该 IP 地址的域名**（其他配置不变）
+
+        \*WebSocket 模式代理客户端（通过 CDN 加速）服务器地址 (ServerAddress) 设置为**域名** 或 **任意支持 Anycast 的 CDN 节点 IP**（其他配置不变）
+
+**注意** 本脚本为**单用户**配置，部署后可以**自行按需修改**代理配置文件内容，但修改后**不要**使用脚本菜单中的修改选项，否则将会**重置**相关配置信息。
+
+**注意** 请根据部署情况**调整开启防火墙端口**，例如 HTTP 80、9080 及 HTTPS 443 端口。
 
 ## 日志查看
 
