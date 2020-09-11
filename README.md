@@ -1,6 +1,5 @@
 # TSP & Trojan-Go / V2Ray 容器化管理部署脚本
 
-![GitHub](https://img.shields.io/github/license/h31105/trojan_v2_docker_onekey?style=flat)
 [![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fh31105%2Ftrojan_v2_docker_onekey.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2Fh31105%2Ftrojan_v2_docker_onekey?ref=badge_shield)
 ![GitHub top language](https://img.shields.io/github/languages/top/h31105/trojan_v2_docker_onekey?style=flat)
 [![Codacy Badge](https://app.codacy.com/project/badge/Grade/e30f6ade06144d6b91e50b073bf35b7c)](https://www.codacy.com/manual/h31105/trojan_v2_docker_onekey?utm_source=github.com&utm_medium=referral&utm_content=h31105/trojan_v2_docker_onekey&utm_campaign=Badge_Grade)
