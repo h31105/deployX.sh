@@ -57,7 +57,7 @@ WARN="${Yellow}[警告]${Font}"
 Error="${Red}[错误]${Font}"
 
 #版本、初始化变量
-shell_version="1.162"
+shell_version="1.163"
 tsp_cfg_version="0.61.1"
 upgrade_mode="none"
 github_branch="master"
@@ -929,12 +929,12 @@ deployed_status_check() {
                 systemctl is-active "chrony" &>/dev/null || chrony_stat=inactive
             fi
             if [[ $chrony_stat = inactive ]]; then
-                echo -e "${Error} ${RedBG} 检测到 Chrony 时间同步服务未启动，若系统时间不准确将会严重影响 V2Ray VMess 协议的可用性 ${Font}\n${WARN} ${Yellow} 当前系统时间:$(date)，请确认时间是否准确，误差范围±3分钟内 (Y/N) [Y]: ${Font}"
+                echo -e "${Error} ${RedBG} 检测到 Chrony 时间同步服务未启动，若系统时间不准确将会严重影响 V2Ray VMess 协议的可用性 ${Font}\n${WARN} ${Yellow} 当前系统时间: $(date)，请确认时间是否准确，误差范围±3分钟内（Y）或 尝试修复时间同步服务（R） [R]: ${Font}"
                 read -r chrony_confirm
-                [[ -z ${chrony_confirm} ]] && chrony_confirm="Y"
+                [[ -z ${chrony_confirm} ]] && chrony_confirm="R"
                 case $chrony_confirm in
-                [nN][oO] | [nN])
-                    echo -e "${GreenBG} 尝试修复安装 Chrony 时间同步服务 ${Font}"
+                [rR])
+                    echo -e "${GreenBG} 安装 Chrony 时间同步服务 ${Font}"
                     check_system
                     chrony_install
                     ;;
