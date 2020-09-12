@@ -19,13 +19,13 @@
 Centos 7+
 
 ```Bash
-command -v wget >/dev/null 2>&1 || yum -y install wget
+command -v wget >/dev/null 2>&1 || sudo yum -y install wget
 ```
 
 Debian 8+ | Ubuntu 16+
 
 ```Bash
-command -v wget >/dev/null 2>&1 || apt -y install wget
+command -v wget >/dev/null 2>&1 || sudo apt -y install wget
 ```
 
 2.  下载并执行脚本
