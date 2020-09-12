@@ -689,8 +689,8 @@ install_watchtower() {
 
 install_portainer() {
     docker volume create portainer_data
-    docker pull portainer/portainer
-    docker run -d -p 9080:9000 --name Portainer --restart=always -v /var/run/docker.sock:/var/run/docker.sock -v portainer_data:/data portainer/portainer
+    docker pull portainer/portainer-ce
+    docker run -d -p 9080:9000 --name Portainer --restart=always -v /var/run/docker.sock:/var/run/docker.sock -v portainer_data:/data portainer/portainer-ce
     judge "Portainer 容器安装"
     echo -e "${OK} ${GreenBG} Portainer 管理地址为 http://$TSP_Domain:9080 请自行开启防火墙端口！ ${Font}"
 }

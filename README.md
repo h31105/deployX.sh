@@ -75,7 +75,7 @@ chmod +x deploy.sh && bash deploy.sh
 
 -   Portainer 基于 Web 的 Docker 管理服务（可选）
 
-    \*Portainer 安装后，请尽快访问管理地址：<http://server.domain.name:9080> 设置管理帐号和密码。
+    \*Portainer 安装后，请尽快访问管理地址：<http://server.domainname:9080> （非 HTTPS）设置管理帐号和密码。
 
 -   由于 TSP 的 SNI 分流特性，若需配置 CDN 建议使用 A 记录方式，CNAME 方式不被支持。
 
