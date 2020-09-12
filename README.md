@@ -14,6 +14,22 @@
 
 ## 使用简介
 
+1.  安装 Wget
+
+Centos 7+
+
+```Bash
+command -v wget >/dev/null 2>&1 || yum -y install wget
+```
+
+Debian 8+ | Ubuntu 16+
+
+```Bash
+command -v wget >/dev/null 2>&1 || apt -y install wget
+```
+
+2.  下载并执行脚本
+
 ```Bash
 wget -N --no-check-certificate -q https://cdn.jsdelivr.net/gh/h31105/trojan_v2_docker_onekey/deploy.sh && \
 chmod +x deploy.sh && bash deploy.sh

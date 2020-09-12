@@ -57,7 +57,7 @@ WARN="${Yellow}[警告]${Font}"
 Error="${Red}[错误]${Font}"
 
 #版本、初始化变量
-shell_version="1.163"
+shell_version="1.164"
 tsp_cfg_version="0.61.1"
 upgrade_mode="none"
 github_branch="master"
@@ -976,19 +976,19 @@ info() {
     if [ -f ${tsp_conf} ]; then
         echo -e "TLS-Shunt-Proxy $(/usr/local/bin/tls-shunt-proxy --version 2>&1 | awk 'NR==1{gsub(/"/,"");print $3}')" &&
             echo -e "服务器TLS端口: ${TSP_Port}" && echo -e "服务器TLS域名: ${TSP_Domain}"
-        [[ $trojan_tcp_mode = true ]] && echo -e "Trojan-Go TCP 分流端口: $trojan_tcp_port"
+        [[ $trojan_tcp_mode = true ]] && echo -e "Trojan-Go TCP 分流端口: $trojan_tcp_port" && echo -e "Trojan-Go 监听端口: $tjport"
         [[ $trojan_ws_mode = true ]] && echo -e "Trojan-Go WebSocket 分流端口: $trojan_ws_port" &&
             echo -e "Trojan-Go WebSocket 分流路径: $trojan_ws_path"
-        [[ $v2ray_tcp_mode = v*ess ]] && echo -e "V2Ray TCP 分流端口: $v2ray_tcp_port"
-        [[ $v2ray_ws_mode = v*ess ]] && echo -e "V2Ray WebSocket 分流端口: $v2ray_ws_port" &&
+        [[ $v2ray_tcp_mode = v*ess ]] && echo -e "V2Ray TCP 分流端口: $v2ray_tcp_port" && echo -e "V2Ray TCP 监听端口: $v2port"
+        [[ $v2ray_ws_mode = v*ess ]] && echo -e "V2Ray WebSocket 分流端口: $v2ray_ws_port" && echo -e "V2Ray WS 监听端口: $v2wsport" &&
             echo -e "V2Ray WebSocket 分流路径: $v2ray_ws_path"
     fi
 
     if [[ -f ${trojan_conf} && $trojan_stat = "installed" ]]; then
         echo -e "—————————————————— Trojan-Go 配置 ——————————————————" &&
-            echo -e "$(docker exec Trojan-Go sh -c 'trojan-go --version' 2>&1 | awk 'NR==1{gsub(/"/,"");print}')"
-        [[ $trojan_tcp_mode = true ]] &&
-            echo -e "Trojan-Go 监听端口: $tjport" && echo -e "Trojan-Go 密码: ${tjpassword}"
+            echo -e "$(docker exec Trojan-Go sh -c 'trojan-go --version' 2>&1 | awk 'NR==1{gsub(/"/,"");print}')" &&
+            echo -e "服务器端口: ${TSP_Port}" && echo -e "服务器域名: ${TSP_Domain}"
+        [[ $trojan_tcp_mode = true ]] && echo -e "Trojan-Go 密码: ${tjpassword}"
         [[ $trojan_ws_mode = true ]] &&
             echo -e "Trojan-Go WebSocket Path: ${tjwspath}" && echo -e "Trojan-Go WebSocket Host: ${tjwshost}"
         [[ $trojan_tcp_mode = true ]] && echo -e "\n Trojan-Go TCP TLS 分享链接：" &&
@@ -1005,18 +1005,15 @@ info() {
 
     if [[ -f ${v2ray_conf} && $v2ray_stat = "installed" ]]; then
         echo -e "\n———————————————————— V2Ray 配置 ————————————————————" &&
-            echo -e "$(docker exec V2Ray sh -c 'v2ray --version' 2>&1 | awk 'NR==1{gsub(/"/,"");print}')"
-        [[ $v2ray_tcp_mode = "vmess" ]] &&
-            echo -e "VMess TCP 监听端口: $v2port" && echo -e "VMess TCP UUID: ${VMTID}" &&
+            echo -e "$(docker exec V2Ray sh -c 'v2ray --version' 2>&1 | awk 'NR==1{gsub(/"/,"");print}')" &&
+            echo -e "服务器端口: ${TSP_Port}" && echo -e "服务器域名: ${TSP_Domain}"
+        [[ $v2ray_tcp_mode = "vmess" ]] && echo -e "\nVMess TCP UUID: ${VMTID}" &&
             echo -e "VMess AlterID: ${VMAID}" && echo -e "VMess 加密方式: Auto" && echo -e "VMess Host: ${TSP_Domain}"
-        [[ $v2ray_tcp_mode = "vless" ]] &&
-            echo -e "VLESS TCP 监听端口: $v2port" && echo -e "VLESS TCP UUID: ${VLTID}" &&
+        [[ $v2ray_tcp_mode = "vless" ]] && echo -e "\nVLESS TCP UUID: ${VLTID}" &&
             echo -e "VLESS 加密方式: none" && echo -e "VLESS Host: ${TSP_Domain}"
-        [[ $v2ray_ws_mode = "vmess" ]] &&
-            echo -e "VMess WS 监听端口: $v2wsport" && echo -e "VMess WS UUID: ${VMWSID}" && echo -e "VMess AlterID: $VMWSAID" &&
+        [[ $v2ray_ws_mode = "vmess" ]] && echo -e "\nVMess WS UUID: ${VMWSID}" && echo -e "VMess AlterID: $VMWSAID" &&
             echo -e "VMess 加密方式: Auto" && echo -e "VMess WebSocket Host: ${TSP_Domain}" && echo -e "VMess WebSocket Path: ${v2wspath}"
-        [[ $v2ray_ws_mode = "vless" ]] &&
-            echo -e "VLESS WS 监听端口: $v2wsport" && echo -e "VLESS WS UUID: ${VLWSID}" &&
+        [[ $v2ray_ws_mode = "vless" ]] && echo -e "\nVLESS WS UUID: ${VLWSID}" &&
             echo -e "VLESS 加密方式: none" && echo -e "VLESS WebSocket Host: ${TSP_Domain}" && echo -e "VLESS WebSocket Path: ${v2wspath}"
         [[ $v2ray_tcp_mode = "vmess" ]] && echo -e "\n VMess TCP TLS 分享链接：" &&
             echo -e " （V2RayN 格式）：\n vmess://$(echo "{\"add\":\"${TSP_Domain}\",\"aid\":\"6\",\"host\":\"${TSP_Domain}\",\"peer\":\"${TSP_Domain}\",\"id\":\"${VMTID}\",\"net\":\"tcp\",\"port\":\"${TSP_Port}\",\"ps\":\"${HOSTNAME}-TCP\",\"tls\":\"tls\",\"type\":\"none\",\"v\":\"2\"}" | base64 -w 0)" &&
