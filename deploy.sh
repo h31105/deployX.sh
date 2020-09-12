@@ -987,7 +987,7 @@ info() {
     if [[ -f ${trojan_conf} && $trojan_stat = "installed" ]]; then
         echo -e "—————————————————— Trojan-Go 配置 ——————————————————" &&
             echo -e "$(docker exec Trojan-Go sh -c 'trojan-go --version' 2>&1 | awk 'NR==1{gsub(/"/,"");print}')" &&
-            echo -e "服务器端口: ${TSP_Port}" && echo -e "服务器域名: ${TSP_Domain}"
+            echo -e "服务器端口: ${TSP_Port}" && echo -e "服务器地址: ${TSP_Domain}"
         [[ $trojan_tcp_mode = true ]] && echo -e "Trojan-Go 密码: ${tjpassword}"
         [[ $trojan_ws_mode = true ]] &&
             echo -e "Trojan-Go WebSocket Path: ${tjwspath}" && echo -e "Trojan-Go WebSocket Host: ${tjwshost}"
@@ -1006,7 +1006,7 @@ info() {
     if [[ -f ${v2ray_conf} && $v2ray_stat = "installed" ]]; then
         echo -e "\n———————————————————— V2Ray 配置 ————————————————————" &&
             echo -e "$(docker exec V2Ray sh -c 'v2ray --version' 2>&1 | awk 'NR==1{gsub(/"/,"");print}')" &&
-            echo -e "服务器端口: ${TSP_Port}" && echo -e "服务器域名: ${TSP_Domain}"
+            echo -e "服务器端口: ${TSP_Port}" && echo -e "服务器地址: ${TSP_Domain}"
         [[ $v2ray_tcp_mode = "vmess" ]] && echo -e "\nVMess TCP UUID: ${VMTID}" &&
             echo -e "VMess AlterID: ${VMAID}" && echo -e "VMess 加密方式: Auto" && echo -e "VMess Host: ${TSP_Domain}"
         [[ $v2ray_tcp_mode = "vless" ]] && echo -e "\nVLESS TCP UUID: ${VLTID}" &&
