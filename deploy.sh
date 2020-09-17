@@ -57,7 +57,7 @@ WARN="${Yellow}[警告]${Font}"
 Error="${Red}[错误]${Font}"
 
 #版本、初始化变量
-shell_version="1.165"
+shell_version="1.166"
 tsp_cfg_version="0.61.1"
 #install_mode="docker"
 upgrade_mode="none"
@@ -79,9 +79,15 @@ source '/etc/os-release'
 VERSION=$(echo "${VERSION}" | awk -F "[()]" '{print $2}')
 
 check_system() {
-    if [[ "${ID}" == "centos" && ${VERSION_ID} -ge 7 ]]; then
+    if [[ "${ID}" == "centos" && ${VERSION_ID} -eq 7 ]]; then
         echo -e "${OK} ${GreenBG} 当前系统为 Centos ${VERSION_ID} ${VERSION} ${Font}"
         INS="yum"
+        yum install epel-release -y -q
+    elif [[ "${ID}" == "centos" && ${VERSION_ID} -ge 8 ]]; then
+        echo -e "${OK} ${GreenBG} 当前系统为 Centos ${VERSION_ID} ${VERSION} ${Font}"
+        INS="dnf"
+        dnf install epel-release -y -q
+        dnf config-manager --set-enabled PowerTools
     elif [[ "${ID}" == "debian" && ${VERSION_ID} -ge 8 ]]; then
         echo -e "${OK} ${GreenBG} 当前系统为 Debian ${VERSION_ID} ${VERSION} ${Font}"
         INS="apt"
@@ -154,7 +160,7 @@ chrony_install() {
 }
 
 dependency_install() {
-    ${INS} install curl git lsof unzip -y
+    ${INS} install curl git lsof unzip -y -q
     judge "安装依赖包 curl git lsof unzip"
     ${INS} -y install haveged
     systemctl start haveged && systemctl enable haveged
