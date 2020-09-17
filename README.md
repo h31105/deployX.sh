@@ -12,17 +12,19 @@
 
 本方案采用 TSP 进行 TLS 前置分流，后端使用 Trojan-Go、V2Ray 容器与 WatchTower、Portainer 维护组件配合，实现快速部署、易用易维护的极致体验。
 
+**特别提示** 在脚本部署过程中，除引用必要的**官方源**外，其他所有配置操作、数据处理皆为**本地执行**，**无任何外部连接参与数据交换**。
+
 ## 使用简介
 
 1.  安装 Wget（当检测到已经安装时，会跳过，请继续执行第二步）
 
-Centos 7+
+**Centos 7+**
 
 ```Bash
 command -v wget >/dev/null 2>&1 || sudo yum -y install wget
 ```
 
-Debian 8+ | Ubuntu 16+
+**Debian 8+ | Ubuntu 16+**
 
 ```Bash
 command -v wget >/dev/null 2>&1 || sudo apt -y install wget
@@ -35,7 +37,7 @@ wget -N --no-check-certificate -q https://cdn.jsdelivr.net/gh/h31105/trojan_v2_d
 chmod +x deploy.sh && bash deploy.sh
 ```
 
-**提醒** 由于 1.10 版本改动较多，使用 1.00 以前版本脚本部署的环境，**与新版脚本存在配置兼容性问题，请在脚本升级后，根据提示重新安装 TLS-Shunt-Proxy 来完成新版本的配置适配。**（更新内容详见 Release 页面）
+**提醒** 由于 1.10+ 版本改动较多，使用 1.00 以前版本脚本部署的环境，**与新版脚本存在配置兼容性问题，请在脚本升级后，根据提示重新安装 TLS-Shunt-Proxy 来完成新版本的配置适配。**（更新内容详见 Release 页面）
 
 ```Bash
     ——————————————————————部署管理——————————————————————
@@ -75,7 +77,7 @@ chmod +x deploy.sh && bash deploy.sh
 
 -   Portainer 基于 Web 的 Docker 管理服务（可选）
 
-    \*Portainer 安装后，请尽快访问管理地址：<http://server.domainname:9080> （非 HTTPS）设置管理帐号和密码。
+    \*Portainer 安装后，请尽快访问管理地址设置管理帐号和密码。<HTTP://ServerDomainName:9080> **（非 HTTPS）**
 
 -   由于 TSP 的 SNI 分流特性，若需配置 CDN 建议使用 A 记录方式，CNAME 方式不被支持。
 
@@ -96,7 +98,7 @@ chmod +x deploy.sh && bash deploy.sh
 
         \*如果您的域名解析服务支持**分线路**设置 DNS 记录（例如 Aliyun、DNSpod），可通过设置**境外线路**解析为 VPS IP，其他线路解析为 CDN 记录来解决此问题。
 
-    3.  由于 CDN **仅支持** 加速 WebSocket 模式代理，**在开启 CDN 加速后**，为确保所有模式代理均可正常使用，**客户端需要根据脚本生成的配置信息做相应调整**。
+    3.  由于 CDN **仅支持** 加速 WebSocket 模式代理，**在开启 CDN 加速后**，为确保所有模式代理均可正常使用，**客户端**需要**根据脚本生成的配置信息**做**相应调整**。
 
         通过客户端服务器地址的不同配置，来控制是否通过 CDN 加速：
 
@@ -112,37 +114,45 @@ chmod +x deploy.sh && bash deploy.sh
 
 ### TLS-Shunt-Proxy 日志查看
 
--   查看所有日志：journalctl -u tls-shunt-proxy.service
--   查看当天日志：journalctl -u tls-shunt-proxy.service --since today
+-   查看所有日志：`journalctl -u tls-shunt-proxy.service`
+-   查看当天日志：`journalctl -u tls-shunt-proxy.service --since today`
 
 ### 容器日志查看
 
 -   查看 Trojan-Go 日志
 
-    最近 30 分钟日志：docker logs --since 30m Trojan-Go
+    最近 30 分钟日志：`docker logs --since 30m Trojan-Go`
 
 -   查看 V2Ray 日志
 
-    最近 100 行日志：docker logs --tail=100 V2Ray
+    最近 100 行日志：`docker logs --tail=100 V2Ray`
 
 -   查看 WatchTower 日志
 
-    指定时间后日志：docker logs --since="2020-09-01T10:10:00" WatchTower
+    指定时间后日志：`docker logs --since="2020-09-01T10:10:00" WatchTower`
 
 -   查看 Portainer 日志
 
-    指定时间段日志：docker logs --since="2020-09-05T10:10:00" --until "2020-09-05T12:00:00" Portainer
+    指定时间段日志：`docker logs --since="2020-09-05T10:10:00" --until "2020-09-05T12:00:00" Portainer`
+
+## 自定义配置以及容器重启
+
+在某些情况下，我们可能需要自定义修改代理配置文件（**非脚本方式**修改配置），我们需要在修改后，重启代理容器使配置生效。
+
+例如：重启 V2Ray 容器：`docker restart V2Ray`
+
+**注意** 请确认您对 TLS-Shunt-Proxy 以及 Trojan-Go/V2Ray 代理的配置方式、工作原理**足够了解**，否则**不要自定义修改**相关配置文件。
 
 ## 配置文件
 
--   WebSite：/home/wwwroot/
--   TLS-Shunt-Proxy：/etc/tls-shunt-proxy/config.yaml
--   Trojan-Go：/etc/trojan-go/config.json
--   V2ray：/etc/v2ray/config.json
+-   WebSite：`/home/wwwroot/`
+-   TLS-Shunt-Proxy：`/etc/tls-shunt-proxy/config.yaml`
+-   Trojan-Go：`/etc/trojan-go/config.json`
+-   V2ray：`/etc/v2ray/config.json`
 
 ## 其他参考
 
-本脚本最初由**wulabing/V2Ray_ws-tls_bash_onekey**脚本改写，脚本中使用的 Docker 镜像来自于**秋水逸冰（Teddysun）**，在此感谢二位！（其他外部引用皆为“官方源”）
+本脚本最初由**wulabing/V2Ray_ws-tls_bash_onekey**脚本改写，脚本中使用的 Docker 镜像来自于**秋水逸冰（Teddysun）**，在此感谢！
 
 -   [V2Ray_ws-tls_bash_onekey](https://github.com/wulabing/V2Ray_ws-tls_bash_onekey)
 -   [teddysun@DockerHub](https://hub.docker.com/u/teddysun/)

@@ -57,8 +57,9 @@ WARN="${Yellow}[警告]${Font}"
 Error="${Red}[错误]${Font}"
 
 #版本、初始化变量
-shell_version="1.164"
+shell_version="1.165"
 tsp_cfg_version="0.61.1"
+#install_mode="docker"
 upgrade_mode="none"
 github_branch="master"
 version_cmp="/tmp/version_cmp.tmp"
@@ -154,12 +155,17 @@ chrony_install() {
 
 dependency_install() {
     ${INS} install curl git lsof unzip -y
+    judge "安装依赖包 curl git lsof unzip"
     ${INS} -y install haveged
     systemctl start haveged && systemctl enable haveged
-    command -v bc >/dev/null 2>&1 || (${INS} -y install bc && judge "安装 bc")
-    command -v jq >/dev/null 2>&1 || (${INS} -y install jq && judge "安装 jq")
-    command -v sponge >/dev/null 2>&1 || (${INS} -y install moreutils && judge "安装 moreutils")
-    command -v qrencode >/dev/null 2>&1 || (${INS} -y install qrencode && judge "安装 qrencode")
+    command -v bc >/dev/null 2>&1 || ${INS} -y install bc
+    judge "安装依赖包 bc"
+    command -v jq >/dev/null 2>&1 || ${INS} -y install jq
+    judge "安装依赖包 jq"
+    command -v sponge >/dev/null 2>&1 || ${INS} -y install moreutils
+    judge "安装依赖包 moreutils"
+    command -v qrencode >/dev/null 2>&1 || ${INS} -y install qrencode
+    judge "安装依赖包 qrencode"
 }
 
 basic_optimization() {
