@@ -57,7 +57,7 @@ WARN="${Yellow}[警告]${Font}"
 Error="${Red}[错误]${Font}"
 
 #版本、初始化变量
-shell_version="1.166"
+shell_version="1.167"
 tsp_cfg_version="0.61.1"
 #install_mode="docker"
 upgrade_mode="none"
@@ -672,7 +672,7 @@ tsp_sync() {
 }
 
 install_trojan() {
-    [[ $(systemctl is-active "docker") = "inactive" ]] && install_docker
+    systemctl is-active "docker" &>/dev/null || install_docker
     prereqcheck
     trojan_reset
     docker pull teddysun/trojan-go
@@ -681,7 +681,7 @@ install_trojan() {
 }
 
 install_v2ray() {
-    [[ $(systemctl is-active "docker") = "inactive" ]] && install_docker
+    systemctl is-active "docker" &>/dev/null || install_docker
     prereqcheck
     v2ray_mode_type
     [[ $v2ray_tcp_mode = "vmess" || $v2ray_ws_mode = "vmess" ]] && check_system && chrony_install
