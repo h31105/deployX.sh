@@ -64,14 +64,14 @@ chmod +x deploy.sh && bash deploy.sh
 
 | Protocol | Transport | Direct | CDN | Qv2ray② | Shadowrocket | Clash | v2rayN(G) |
 | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| VLESS | TCP-XTLS① | ✅ | ❌ | ✅ | ❌ | ❌ | ✅ |
-| VLESS | TCP-TLS(Mux) | ✅ | ❌ | ✅ | ✅ | ❌ | ✅ |
-| VLESS | WS-TLS(Mux) | ✅ | ✅ | ✅ | ✅ | ❌ | ✅ |
-| VMess | TCP-TLS(Mux) | ✅ | ❌ | ✅ | ✅ | ✅ | ✅ |
-| VMess | WS-TLS(Mux) | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| Trojan③ | TCP-TLS | ✅ | ❌ | ✅ | ✅ | ✅ | ❌ |
-| Trojan-Go | TCP-TLS(Mux) | ✅ | ❌ | ✅ | ✅ | ❌ | ❌ |
-| Trojan-Go | WS-TLS(Mux) | ✅ | ✅ | ✅ | ✅ | ❌ | ❌ |
+| VLESS    | TCP-XTLS①    | ✅ | ❌ | ✅ | ❌ | ❌ | ✅ |
+| VLESS    | TCP-TLS(Mux) | ✅ | ❌ | ✅ | ✅ | ❌ | ✅ |
+| VLESS    | WS-TLS(Mux)  | ✅ | ✅ | ✅ | ✅ | ❌ | ✅ |
+| VMess    | TCP-TLS(Mux) | ✅ | ❌ | ✅ | ✅ | ✅ | ✅ |
+| VMess    | WS-TLS(Mux)  | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Trojan③  | TCP-TLS      | ✅ | ❌ | ✅ | ✅ | ✅ | ❌ |
+| Trojan-Go| TCP-TLS(Mux) | ✅ | ❌ | ✅ | ✅ | ❌ | ❌ |
+| Trojan-Go| WS-TLS(Mux)  | ✅ | ✅ | ✅ | ✅ | ❌ | ❌ |
 
 ✅完全支持 ❌不支持
 
@@ -171,7 +171,7 @@ chmod +x deploy.sh && bash deploy.sh
 -   WebSite：`/home/wwwroot/`
 -   TLS-Shunt-Proxy：`/etc/tls-shunt-proxy/config.yaml`
 -   Trojan-Go：`/etc/trojan-go/config.json`
--   V2ray：`/etc/v2ray/config.json`
+-   V2Ray：`/etc/v2ray/config.json`
 
 ## 其他参考
 
