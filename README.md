@@ -60,6 +60,29 @@ chmod +x deploy.sh && bash deploy.sh
     ————————————————————————————————————————————————————   
 ```
 
+## 协议、CDN 及客户端支持状况（2020-09-27）
+
+| Protocol | Transport | Direct | CDN | Qv2ray② | Shadowrocket | Clash | v2rayN(G) |
+| :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| VLESS | TCP-XTLS① | ✅ | ❌ | ✅ | ❌ | ❌ | ✅ |
+| VLESS | TCP-TLS(Mux) | ✅ | ❌ | ✅ | ✅ | ❌ | ✅ |
+| VLESS | WS-TLS(Mux) | ✅ | ✅ | ✅ | ✅ | ❌ | ✅ |
+| VMess | TCP-TLS(Mux) | ✅ | ❌ | ✅ | ✅ | ✅ | ✅ |
+| VMess | WS-TLS(Mux) | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Trojan③ | TCP-TLS | ✅ | ❌ | ✅ | ✅ | ✅ | ❌ |
+| Trojan-Go | TCP-TLS(Mux) | ✅ | ❌ | ✅ | ✅ | ❌ | ❌ |
+| Trojan-Go | WS-TLS(Mux) | ✅ | ✅ | ✅ | ✅ | ❌ | ❌ |
+
+✅完全支持 ❌不支持
+
+**①** 暂不支持 VLESS XTLS 配置的脚本部署，需自定义 V2Ray 配置文件开启 VLESS XTLS 功能。
+
+**②** Qv2Ray 客户端需根据协议类型安装对应插件及核心，才能正常使用。
+
+**③** Trojan-Go 兼容原版 Trojan 协议。
+
+**⚝ 可同时部署 Trojan-Go 和 V2Ray 服务端，最大支持共用分流 2种 WS-TLS 和 2种 TCP-TLS（协议类型按需自由组合）**
+
 ## 部署建议
 
 脚本部署的完整架构拓扑如下图所示：
