@@ -62,26 +62,26 @@ chmod +x deploy.sh && bash deploy.sh
 
 ## 协议、CDN 及客户端支持状况（2020-09-27）
 
-| Protocol | Transport | Direct | CDN | Qv2ray② | Shadowrocket | Clash | v2rayN(G) |
-| :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| VLESS    | TCP-XTLS①    | ✅ | ❌ | ✅ | ❌ | ❌ | ✅ |
-| VLESS    | TCP-TLS(Mux) | ✅ | ❌ | ✅ | ✅ | ❌ | ✅ |
-| VLESS    | WS-TLS(Mux)  | ✅ | ✅ | ✅ | ✅ | ❌ | ✅ |
-| VMess    | TCP-TLS(Mux) | ✅ | ❌ | ✅ | ✅ | ✅ | ✅ |
-| VMess    | WS-TLS(Mux)  | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| Trojan③  | TCP-TLS      | ✅ | ❌ | ✅ | ✅ | ✅ | ❌ |
-| Trojan-Go| TCP-TLS(Mux) | ✅ | ❌ | ✅ | ✅ | ❌ | ❌ |
-| Trojan-Go| WS-TLS(Mux)  | ✅ | ✅ | ✅ | ✅ | ❌ | ❌ |
+|  Protocol |   Transport  | Direct | CDN | Qv2ray② | Shadowrocket | Clash | v2rayN(G) |
+| :-------: | :----------: | :----: | :-: | :-----: | :----------: | :---: | :-------: |
+|   VLESS   |   TCP-XTLS①  |    ✅   |  ❌  |    ✅    |       ❌      |   ❌   |     ✅     |
+|   VLESS   | TCP-TLS(Mux) |    ✅   |  ❌  |    ✅    |       ✅      |   ❌   |     ✅     |
+|   VLESS   |  WS-TLS(Mux) |    ✅   |  ✅  |    ✅    |       ✅      |   ❌   |     ✅     |
+|   VMess   | TCP-TLS(Mux) |    ✅   |  ❌  |    ✅    |       ✅      |   ✅   |     ✅     |
+|   VMess   |  WS-TLS(Mux) |    ✅   |  ✅  |    ✅    |       ✅      |   ✅   |     ✅     |
+|  Trojan③  |    TCP-TLS   |    ✅   |  ❌  |    ✅    |       ✅      |   ✅   |     ❌     |
+| Trojan-Go | TCP-TLS(Mux) |    ✅   |  ❌  |    ✅    |       ✅      |   ❌   |     ❌     |
+| Trojan-Go |  WS-TLS(Mux) |    ✅   |  ✅  |    ✅    |       ✅      |   ❌   |     ❌     |
 
 ✅完全支持 ❌不支持
 
-**①** 暂不支持 VLESS XTLS 配置的脚本部署，需自定义 V2Ray 配置文件开启 VLESS XTLS 功能。
+**①** 暂不支持 VLESS PREVIEW & XTLS 配置的脚本部署，需自定义 V2Ray 配置文件开启 VLESS PREVIEW & XTLS 功能。
 
 **②** Qv2Ray 客户端需根据协议类型安装对应插件及核心，才能正常使用。
 
 **③** Trojan-Go 兼容原版 Trojan 协议。
 
-**⚝ 可同时部署 Trojan-Go 和 V2Ray 服务端，最大支持共用分流 2种 WS-TLS 和 2种 TCP-TLS（协议类型按需自由组合）**
+**⚝ 可同时部署 Trojan-Go 和 V2Ray 服务端，最大支持共用分流 2 种 WS-TLS 和 2 种 TCP-TLS（协议类型按需自由组合）**
 
 ## 部署建议
 
@@ -104,34 +104,34 @@ chmod +x deploy.sh && bash deploy.sh
 
 -   由于 TSP 的 SNI 分流特性，若需配置 CDN 建议使用 A 记录方式，CNAME 方式不被支持。
 
-    CDN 配置：域名 -- A 记录 --> VPS IP **#这里的域名与脚本部署时填写的 TLS 域名相同**
-
-    \*关于开启 CDN 加速，需要注意以下几点：
-
-    1.  仅需在**直连线路状况不太理想**的情况下开启，否则开启 CDN **并不一定会**带来加速效果。
-
-    2.  CDN 加速开启后，TSP 所管理的证书**可能无法完成自动续签**，应对办法：
-
-        \*请在证书过期前 30 天内，手动暂停 CDN 加速后重启 TSP 完成证书续签。
-
-        ```Bash
-        systemctl restart tls-shunt-proxy #重启 TSP 触发证书续签
-        journalctl -u tls-shunt-proxy.service --since today #查看日志，观察证书续签结果
-        ```
-
-        \*如果您的域名解析服务支持**分线路**设置 DNS 记录（例如 Aliyun、DNSpod），可通过设置**境外线路**解析为 VPS IP，其他线路解析为 CDN 记录来解决此问题。
-
-    3.  由于 CDN **仅支持** 加速 WebSocket 模式代理，**在开启 CDN 加速后**，为确保所有模式代理均可正常使用，**客户端**需要**根据脚本生成的配置信息**做**相应调整**。
-
-        通过客户端服务器地址的不同配置，来控制是否通过 CDN 加速：
-
-        \*TCP 模式代理客户端（不通过 CDN 加速）服务器地址 (ServerAddress) 设置为**VPS IP 地址** 或 **任意指向该 IP 地址的域名**（其他配置不变）
-
-        \*WebSocket 模式代理客户端（通过 CDN 加速）服务器地址 (ServerAddress) 设置为**域名** 或 **任意支持 Anycast 的 CDN 节点 IP**（其他配置不变）
+       CDN 配置：域名 -- A 记录 --> VPS IP **#这里的域名与脚本部署时填写的 TLS 域名相同**
 
 **注意** 本脚本为**单用户**配置，部署后可以**自行按需修改**代理配置文件内容，但修改后**不要**使用脚本菜单中的修改选项，否则将会**重置**相关配置信息。
 
 **注意** 请根据部署情况**调整开启防火墙端口**，例如 HTTP 80、9080 及 HTTPS 443 端口。
+
+### 开启 CDN 加速需要注意
+
+1.  仅需在**直连线路状况不太理想**的情况下开启，否则开启 CDN **并不一定会**带来加速效果。
+
+2.  CDN 加速开启后，TSP 所管理的证书**可能无法完成自动续签**，应对办法：
+
+    \*请在证书过期前 30 天内，手动暂停 CDN 加速后重启 TSP 完成证书续签。
+
+    ```Bash
+    systemctl restart tls-shunt-proxy #重启 TSP 触发证书续签
+    journalctl -u tls-shunt-proxy.service --since today #查看日志，观察证书续签结果
+    ```
+
+    \*如果您的域名解析服务支持**分线路**设置 DNS 记录（例如 Aliyun、DNSpod），可通过设置**境外线路**解析为 VPS IP，其他线路解析为 CDN 记录来解决此问题。
+
+3.  由于 CDN **仅支持** 加速 WebSocket 模式代理，**在开启 CDN 加速后**，为确保所有模式代理均可正常使用，**客户端**需要**根据脚本生成的配置信息**做**相应调整**。
+
+    通过客户端服务器地址的不同配置，来控制是否通过 CDN 加速：
+
+    \*TCP 模式代理客户端（不通过 CDN 加速）服务器地址 (ServerAddress) 设置为**VPS IP 地址** 或 **任意指向该 IP 地址的域名**（其他配置不变）
+
+    \*WebSocket 模式代理客户端（通过 CDN 加速）服务器地址 (ServerAddress) 设置为**域名** 或 **任意支持 Anycast 的 CDN 节点 IP**（其他配置不变）
 
 ## 日志查看
 

@@ -57,7 +57,7 @@ WARN="${Yellow}[警告]${Font}"
 Error="${Red}[错误]${Font}"
 
 #版本、初始化变量
-shell_version="1.167"
+shell_version="1.168"
 tsp_cfg_version="0.61.1"
 #install_mode="docker"
 upgrade_mode="none"
@@ -725,7 +725,7 @@ bbr_boost_sh() {
 }
 
 uninstall_all() {
-    echo -e "${RedBG} !!!此操作将删除 TLS-Shunt-Proxy、Docker 平台 和 此脚本所安装的容器数据!!! ${Font}"
+    echo -e "${RedBG} !!!此操作将删除 TLS-Shunt-Proxy、Docker 平台和此脚本所安装的容器数据!!! ${Font}"
     read -rp "请在确认后，输入 YES（区分大小写）:" uninstall
     [[ -z ${uninstall} ]] && uninstall="No"
     case $uninstall in
@@ -1004,14 +1004,14 @@ info() {
         [[ $trojan_ws_mode = true ]] &&
             echo -e "Trojan-Go WebSocket Path: ${tjwspath}" && echo -e "Trojan-Go WebSocket Host: ${tjwshost}"
         [[ $trojan_tcp_mode = true ]] && echo -e "\n Trojan-Go TCP TLS 分享链接：" &&
-            echo -e " （通用）格式：\n trojan://${tjpassword}@${TSP_Domain}:${TSP_Port}?sni=${TSP_Domain}&peer=${TSP_Domain}&allowinsecure=0&mux=0#${HOSTNAME}-TCP" &&
-            echo -e " （Qv2Ray）格式：\n trojan-go://${tjpassword}@${TSP_Domain}:${TSP_Port}/?sni=${TSP_Domain}&type=original&host=${TSP_Domain}#${HOSTNAME}-TCP" &&
-            echo -e " （通用格式二维码）：" &&
+            echo -e " Trojan 客户端（原版协议）：\n trojan://${tjpassword}@${TSP_Domain}:${TSP_Port}?sni=${TSP_Domain}&peer=${TSP_Domain}&allowinsecure=0&mux=0#${HOSTNAME}-TCP" &&
+            echo -e " Qv2ray 客户端（需安装 Trojan-Go 插件）：\n trojan-go://${tjpassword}@${TSP_Domain}:${TSP_Port}/?sni=${TSP_Domain}&type=original&host=${TSP_Domain}#${HOSTNAME}-TCP" &&
+            echo -e " Shadowrocket 二维码：" &&
             qrencode -t utf8 -s 1 "trojan://${tjpassword}@${TSP_Domain}:${TSP_Port}?sni=${TSP_Domain}&peer=${TSP_Domain}&allowinsecure=0&mux=0#${HOSTNAME}-TCP"
         [[ $trojan_ws_mode = true ]] && echo -e "\n Trojan-Go WebSocket TLS 分享链接：" &&
-            echo -e " （Trojan-Qt5）格式：\n trojan://${tjpassword}@${TSP_Domain}:${TSP_Port}?sni=${TSP_Domain}&peer=${TSP_Domain}&allowinsecure=0&mux=1&ws=1&wspath=${tjwspath}&wshost=${TSP_Domain}#${HOSTNAME}-WS" &&
-            echo -e " （Qv2Ray）格式：\n trojan-go://${tjpassword}@${TSP_Domain}:${TSP_Port}/?sni=${TSP_Domain}&type=ws&host=${TSP_Domain}&path=${tjwspath}#${HOSTNAME}-WS" &&
-            echo -e " （Shadowrocket格式二维码）：" &&
+            echo -e " Trojan-Qt5 客户端：\n trojan://${tjpassword}@${TSP_Domain}:${TSP_Port}?sni=${TSP_Domain}&peer=${TSP_Domain}&allowinsecure=0&mux=1&ws=1&wspath=${tjwspath}&wshost=${TSP_Domain}#${HOSTNAME}-WS" &&
+            echo -e " Qv2ray 客户端（需安装 Trojan-Go 插件）：\n trojan-go://${tjpassword}@${TSP_Domain}:${TSP_Port}/?sni=${TSP_Domain}&type=ws&host=${TSP_Domain}&path=${tjwspath}#${HOSTNAME}-WS" &&
+            echo -e " Shadowrocket 二维码：" &&
             qrencode -t utf8 -s 1 "trojan://${tjpassword}@${TSP_Domain}:${TSP_Port}?peer=${TSP_Domain}&mux=1&plugin=obfs-local;obfs=websocket;obfs-host=${TSP_Domain};obfs-uri=${tjwspath}#${HOSTNAME}-WS"
     fi
 
@@ -1028,15 +1028,17 @@ info() {
         [[ $v2ray_ws_mode = "vless" ]] && echo -e "\nVLESS WS UUID: ${VLWSID}" &&
             echo -e "VLESS 加密方式: none" && echo -e "VLESS WebSocket Host: ${TSP_Domain}" && echo -e "VLESS WebSocket Path: ${v2wspath}"
         [[ $v2ray_tcp_mode = "vmess" ]] && echo -e "\n VMess TCP TLS 分享链接：" &&
-            echo -e " （V2RayN 格式）：\n vmess://$(echo "{\"add\":\"${TSP_Domain}\",\"aid\":\"6\",\"host\":\"${TSP_Domain}\",\"peer\":\"${TSP_Domain}\",\"id\":\"${VMTID}\",\"net\":\"tcp\",\"port\":\"${TSP_Port}\",\"ps\":\"${HOSTNAME}-TCP\",\"tls\":\"tls\",\"type\":\"none\",\"v\":\"2\"}" | base64 -w 0)" &&
-            echo -e " （Shadowrocket格式二维码）：" &&
+            echo -e " V2RayN 格式：\n vmess://$(echo "{\"add\":\"${TSP_Domain}\",\"aid\":\"6\",\"host\":\"${TSP_Domain}\",\"peer\":\"${TSP_Domain}\",\"id\":\"${VMTID}\",\"net\":\"tcp\",\"port\":\"${TSP_Port}\",\"ps\":\"${HOSTNAME}-TCP\",\"tls\":\"tls\",\"type\":\"none\",\"v\":\"2\"}" | base64 -w 0)" &&
+            echo -e " VMess 新版格式：\n vmess://tcp:${VMTID}@${TSP_Domain}:${TSP_Port}/?host=$(echo "${TSP_Domain}" | base64 -w 0)&tlsServerName=$(echo "${TSP_Domain}" | base64 -w 0)#$(echo "${HOSTNAME}-TCP" | base64 -w 0)" &&
+            echo -e " Shadowrocket 二维码：" &&
             qrencode -t utf8 -s 1 "vmess://$(echo "auto:${VMTID}@${TSP_Domain}:${TSP_Port}" | base64 -w 0)?tls=1&mux=1&peer=${TSP_Domain}&allowInsecure=0&tfo=0&remarks=${HOSTNAME}-TCP"
         [[ $v2ray_ws_mode = "vmess" ]] && echo -e "\n VMess WebSocket TLS 分享链接：" &&
-            echo -e " （V2RayN 格式）：\n vmess://$(echo "{\"add\":\"${TSP_Domain}\",\"aid\":\"6\",\"host\":\"${TSP_Domain}\",\"peer\":\"${TSP_Domain}\",\"id\":\"${VMWSID}\",\"net\":\"ws\",\"path\":\"${v2wspath}\",\"port\":\"${TSP_Port}\",\"ps\":\"${HOSTNAME}-WS\",\"tls\":\"tls\",\"type\":\"none\",\"v\":\"2\"}" | base64 -w 0)" &&
-            echo -e " （Shadowrocket格式二维码）：" &&
+            echo -e " V2RayN 格式：\n vmess://$(echo "{\"add\":\"${TSP_Domain}\",\"aid\":\"6\",\"host\":\"${TSP_Domain}\",\"peer\":\"${TSP_Domain}\",\"id\":\"${VMWSID}\",\"net\":\"ws\",\"path\":\"${v2wspath}\",\"port\":\"${TSP_Port}\",\"ps\":\"${HOSTNAME}-WS\",\"tls\":\"tls\",\"type\":\"none\",\"v\":\"2\"}" | base64 -w 0)" &&
+            echo -e " VMess 新版格式：\n vmess://ws+tls:${VMTID}@${TSP_Domain}:${TSP_Port}/?path=$(echo "${v2wspath}" | base64 -w 0)&host=$(echo "${TSP_Domain}" | base64 -w 0)&tlsServerName=$(echo "${TSP_Domain}" | base64 -w 0)#$(echo "${HOSTNAME}-WS" | base64 -w 0)" &&
+            echo -e " Shadowrocket 二维码：" &&
             qrencode -t utf8 -s 1 "vmess://$(echo "auto:${VMWSID}@${TSP_Domain}:${TSP_Port}" | base64 -w 0)?tls=1&mux=1&peer=${TSP_Domain}&allowInsecure=0&tfo=0&remarks=${HOSTNAME}-WS&obfs=websocket&obfsParam=${TSP_Domain}&path=${v2wspath}"
-        [[ $v2ray_tcp_mode = "vless" ]] && echo -e "\n VLESS TCP TLS 分享链接："
-        [[ $v2ray_ws_mode = "vless" ]] && echo -e "\n VLESS WebSocket TLS 分享链接："
+        [[ $v2ray_tcp_mode = "vless" ]] && echo -e "\n VLESS TCP TLS 分享链接：暂未发布官方规范"
+        [[ $v2ray_ws_mode = "vless" ]] && echo -e "\n VLESS WebSocket TLS 分享链接：暂未发布官方规范"
     fi
 
     echo -e "\n————————————————————————————————————————————————————\n"
@@ -1057,7 +1059,7 @@ menu_req_check() {
 
 menu() {
     deployed_status_check
-    echo -e "\n${Green}  TSP & Trojan-Go/V2Ray 容器化部署脚本 版本: ${shell_version} ${Font}\n"
+    echo -e "\n${Green}  TSP & Trojan-Go/V2Ray 部署脚本 版本: ${shell_version} ${Font}\n"
     echo -e "——————————————————————部署管理——————————————————————"
     if [[ $tsp_stat = "installed" ]]; then
         echo -e "${Green}1.${Font}  ${Yellow}卸载${Font} TLS-Shunt-Proxy（网站&自动管理证书）"
@@ -1066,15 +1068,15 @@ menu() {
     fi
     systemctl is-active "tls-shunt-proxy" &>/dev/null &&
         if [[ $trojan_stat = "none" ]]; then
-            echo -e "${Green}2.${Font}  安装 Trojan-Go TCP/WS 代理（容器）"
+            echo -e "${Green}2.${Font}  安装 Trojan-Go TCP/WS 代理"
         else
-            echo -e "${Green}2.${Font}  ${Yellow}卸载${Font} Trojan-Go TCP/WS 代理（容器）"
+            echo -e "${Green}2.${Font}  ${Yellow}卸载${Font} Trojan-Go TCP/WS 代理"
         fi
     systemctl is-active "tls-shunt-proxy" &>/dev/null &&
         if [[ $v2ray_stat = "none" ]]; then
-            echo -e "${Green}3.${Font}  安装 V2Ray TCP/WS 代理（容器）"
+            echo -e "${Green}3.${Font}  安装 V2Ray TCP/WS 代理"
         else
-            echo -e "${Green}3.${Font}  ${Yellow}卸载${Font} V2Ray TCP/WS 代理（容器）"
+            echo -e "${Green}3.${Font}  ${Yellow}卸载${Font} V2Ray TCP/WS 代理"
         fi
     systemctl is-active "docker" &>/dev/null &&
         if [[ $watchtower_stat = "none" ]]; then
@@ -1189,7 +1191,18 @@ menu() {
         [ -f ${tsp_conf} ] && uninstall_all
         ;;
     12)
-        bbr_boost_sh
+        systemctl is-active "docker" &>/dev/null && echo -e "${RedBG} !!!由于 Docker 与系统内核关联紧密，更换系统内核可能导致 Docker 无法正常使用!!! ${Font}\n${WARN} ${Yellow} 如果内核更换后 Docker 无法正常启动，请尝试通过 脚本 <选项10:升级 Docker> 修复 或 <选项11:完全卸载> 后重新部署 ${Font}" &&
+            read -rp "请在确认后，输入 YES（区分大小写）:" kernel_change
+        [[ -z ${kernel_change} ]] && kernel_change="YES"
+        case $kernel_change in
+        YES)
+            bbr_boost_sh
+            ;;
+        *)
+            echo -e "${RedBG} 我再想想 ${Font}"
+            exit 0
+            ;;
+        esac
         ;;
     0)
         exit 0
