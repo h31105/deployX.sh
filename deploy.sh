@@ -57,7 +57,7 @@ WARN="${Yellow}[警告]${Font}"
 Error="${Red}[错误]${Font}"
 
 #版本、初始化变量
-shell_version="1.17"
+shell_version="1.170"
 tsp_cfg_version="0.61.1"
 #install_mode="docker"
 upgrade_mode="none"
