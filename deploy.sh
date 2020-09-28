@@ -1195,9 +1195,10 @@ menu() {
         [ -f ${tsp_conf} ] && uninstall_all
         ;;
     12)
+        kernel_change="YES"
         systemctl is-active "docker" &>/dev/null && echo -e "${RedBG} !!!由于 Docker 与系统内核关联紧密，更换系统内核可能导致 Docker 无法正常使用!!! ${Font}\n${WARN} ${Yellow} 如果内核更换后 Docker 无法正常启动，请尝试通过 脚本 <选项10:升级 Docker> 修复 或 <选项11:完全卸载> 后重新部署 ${Font}" &&
             read -rp "请在确认后，输入 YES（区分大小写）:" kernel_change
-        [[ -z ${kernel_change} ]] && kernel_change="YES"
+        [[ -z ${kernel_change} ]] && kernel_change="no"
         case $kernel_change in
         YES)
             bbr_boost_sh
