@@ -57,7 +57,7 @@ WARN="${Yellow}[警告]${Font}"
 Error="${Red}[错误]${Font}"
 
 #版本、初始化变量
-shell_version="1.171"
+shell_version="1.172"
 tsp_cfg_version="0.61.1"
 #install_mode="docker"
 upgrade_mode="none"
@@ -837,7 +837,7 @@ update_sh() {
     echo "$shell_version" >>$version_cmp
     if [[ "$shell_version" < "$(sort -rV $version_cmp | head -1)" ]]; then
         echo -e "${OK} ${GreenBG} 更新内容：${Font}"
-        curl --silent https://api.github.com/repos/h31105/trojan_v2_docker_onekey/releases/latest | echo -e "${Yellow}$(jq -r .body)${Font}"
+	echo -e "${Yellow}$(curl --silent https://api.github.com/repos/h31105/trojan_v2_docker_onekey/releases/latest | grep body | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g')${Font}"
         echo -e "${OK} ${GreenBG} 存在新版本，是否更新 (Y/N) [N]? ${Font}"
         read -r update_confirm
         case $update_confirm in
