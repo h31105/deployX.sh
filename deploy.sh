@@ -587,7 +587,7 @@ install_docker() {
 install_tsp() {
     bash <(curl -L -s https://raw.githubusercontent.com/liberal-boy/tls-shunt-proxy/master/dist/install.sh)
     judge "安装 TLS-Shunt-Proxy"
-    chown -R /etc/ssl/tls-shunt-proxy
+    chown -R tls-shunt-proxy:tls-shunt-proxy /etc/ssl/tls-shunt-proxy
     config_exist_check ${tsp_conf}
     [[ -f ${tsp_conf} ]] && rm -rf ${tsp_conf}
     mkdir -p $tsp_conf_dir
