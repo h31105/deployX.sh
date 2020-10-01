@@ -880,7 +880,7 @@ list() {
 deployed_status_check() {
     tsp_stat="none" && trojan_stat="none" && v2ray_stat="none" && watchtower_stat="none" && portainer_stat="none"
     trojan_tcp_mode="none" && v2ray_tcp_mode="none" && trojan_ws_mode="none" && v2ray_ws_mode="none"
-    tsp_config_stat="synchronized"
+    tsp_config_stat="synchronized" && chrony_stat="none"
 
     echo -e "${OK} ${GreenBG} 检测分流配置信息... ${Font}"
     [[ -f ${tsp_conf} || -f '/usr/local/bin/tls-shunt-proxy' ]] &&
