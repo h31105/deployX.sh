@@ -769,6 +769,7 @@ uninstall_tsp() {
     rm -rf $tsp_conf_dir
     userdel -rf tls-shunt-proxy
     tsp_stat="none"
+    rm -rf ${web_dir}/web_camouflage
     echo -e "${OK} ${GreenBG} TLS-Shunt-Proxy 卸载完成！${Font}"
     sleep 3
 }
