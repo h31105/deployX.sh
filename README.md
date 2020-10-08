@@ -75,7 +75,7 @@ chmod +x deploy.sh && bash deploy.sh
 
 ✅完全支持 ❌不支持
 
-**①** 暂不支持 VLESS PREVIEW & XTLS 配置的脚本部署，需自定义 V2Ray 配置文件开启 VLESS PREVIEW & XTLS 功能。
+**①** 暂不支持 VLESS PREVIEW XTLS 配置的脚本部署（计划中）。
 
 **②** Qv2Ray 客户端需根据协议类型安装对应插件及核心，才能正常使用。
 

@@ -57,7 +57,7 @@ WARN="${Yellow}[警告]${Font}"
 Error="${Red}[错误]${Font}"
 
 #版本、初始化变量
-shell_version="1.173"
+shell_version="1.174"
 tsp_cfg_version="0.61.1"
 #install_mode="docker"
 upgrade_mode="none"
@@ -130,7 +130,7 @@ judge() {
 }
 
 urlEncode() {
-  jq -R -r @uri <<<"$1"
+    jq -R -r @uri <<<"$1"
 }
 
 chrony_install() {
@@ -570,8 +570,11 @@ web_camouflage() {
     rm -rf $web_dir
     mkdir -p $web_dir
     cd $web_dir || exit
-    git clone https://github.com/h31105/LodeRunner_TotalRecall.git
-    judge "Website 伪装"
+    websites[0]="https://github.com/h31105/LodeRunner_TotalRecall.git"
+    websites[1]="https://github.com/h31105/adarkroom.git"
+    selectedwebsite=${websites[$RANDOM % ${#websites[@]}]}
+    git clone ${selectedwebsite} web_camouflage
+    judge "WebSite 伪装"
 }
 
 install_docker() {
@@ -613,7 +616,7 @@ vhosts:
         #handler: proxyPass #V2Ray_WS
         #args: 127.0.0.1:40002;proxyProtocol #V2Ray_WS_Port:${v2ray_ws_mode}
       handler: fileServer
-      args: ${web_dir}/LodeRunner_TotalRecall #Website
+      args: ${web_dir}/web_camouflage #Website_camouflage
     #trojan: #Trojan_TCP
       #handler: proxyPass #Trojan_TCP
       #args: 127.0.0.1:40001 #Trojan_TCP_Port:${trojan_tcp_mode}
@@ -837,7 +840,7 @@ update_sh() {
     echo "$shell_version" >>$version_cmp
     if [[ "$shell_version" < "$(sort -rV $version_cmp | head -1)" ]]; then
         echo -e "${OK} ${GreenBG} 更新内容：${Font}"
-	echo -e "${Yellow}$(curl --silent https://api.github.com/repos/h31105/trojan_v2_docker_onekey/releases/latest | grep body | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g')${Font}"
+        echo -e "${Yellow}$(curl --silent https://api.github.com/repos/h31105/trojan_v2_docker_onekey/releases/latest | grep body | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g')${Font}"
         echo -e "${OK} ${GreenBG} 存在新版本，是否更新 (Y/N) [N]? ${Font}"
         read -r update_confirm
         case $update_confirm in
