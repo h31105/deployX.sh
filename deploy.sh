@@ -57,7 +57,7 @@ WARN="${Yellow}[警告]${Font}"
 Error="${Red}[错误]${Font}"
 
 #版本、初始化变量
-shell_version="1.174"
+shell_version="1.175"
 tsp_cfg_version="0.61.1"
 #install_mode="docker"
 upgrade_mode="none"
@@ -591,6 +591,7 @@ install_tsp() {
     bash <(curl -L -s https://raw.githubusercontent.com/liberal-boy/tls-shunt-proxy/master/dist/install.sh)
     judge "安装 TLS-Shunt-Proxy"
     chown -R tls-shunt-proxy:tls-shunt-proxy /etc/ssl/tls-shunt-proxy
+    setcap "cap_net_bind_service=+ep" /usr/local/bin/tls-shunt-proxy
     config_exist_check ${tsp_conf}
     [[ -f ${tsp_conf} ]] && rm -rf ${tsp_conf}
     mkdir -p $tsp_conf_dir
