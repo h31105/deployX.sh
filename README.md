@@ -4,7 +4,6 @@
 ![GitHub top language](https://img.shields.io/github/languages/top/h31105/trojan_v2_docker_onekey?style=flat)
 [![Codacy Badge](https://api.codacy.com/project/badge/Grade/b9dd1b56b54b4a45bc34fede5a71ac0a)](https://app.codacy.com/gh/h31105/trojan_v2_docker_onekey?utm_source=github.com&utm_medium=referral&utm_content=h31105/trojan_v2_docker_onekey&utm_campaign=Badge_Grade_Settings)
 ![GitHub release (latest by date)](https://img.shields.io/github/v/release/h31105/trojan_v2_docker_onekey?style=flat)
-![jsDelivr hits (GitHub)](https://img.shields.io/jsdelivr/gh/hm/h31105/trojan_v2_docker_onekey)
 ![Visitors](https://visitor-badge.glitch.me/badge?page_id=h31105.trojan_v2_docker_onekey)
 [![Chat on Telegram](https://img.shields.io/badge/chat%20-%20telegram-brightgreen.svg)](https://t.me/trojanv2)
 
@@ -69,7 +68,7 @@ chmod +x deploy.sh && bash deploy.sh
 |   VLESS   |  WS-TLS(Mux) |    ✅   |  ✅  |    ✅    |       ✅      |   ❌   |     ✅     |
 |   VMess   | TCP-TLS(Mux) |    ✅   |  ❌  |    ✅    |       ✅      |   ✅   |     ✅     |
 |   VMess   |  WS-TLS(Mux) |    ✅   |  ✅  |    ✅    |       ✅      |   ✅   |     ✅     |
-|  Trojan③  |    TCP-TLS   |    ✅   |  ❌  |    ✅    |       ✅      |   ✅   |     ❌     |
+|  Trojan③  |    TCP-TLS   |    ✅   |  ❌  |    ✅    |       ✅      |   ✅   |     ✅     |
 | Trojan-Go | TCP-TLS(Mux) |    ✅   |  ❌  |    ✅    |       ✅      |   ❌   |     ❌     |
 | Trojan-Go |  WS-TLS(Mux) |    ✅   |  ✅  |    ✅    |       ✅      |   ❌   |     ❌     |
 
