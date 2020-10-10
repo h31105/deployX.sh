@@ -23,7 +23,7 @@
 command -v wget >/dev/null 2>&1 || sudo yum -y install wget
 ```
 
-**Debian 8+ | Ubuntu 16+**
+**Debian 9+ | Ubuntu 16+**
 
 ```Bash
 command -v wget >/dev/null 2>&1 || sudo apt -y install wget
@@ -59,18 +59,18 @@ chmod +x deploy.sh && bash deploy.sh
     ————————————————————————————————————————————————————   
 ```
 
-## 协议、CDN 及客户端支持状况（2020-09-27）
+## 协议、CDN 及客户端支持状况
 
-|  Protocol |   Transport  | Direct | CDN | Qv2ray② | Shadowrocket | Clash | v2rayN(G) |
-| :-------: | :----------: | :----: | :-: | :-----: | :----------: | :---: | :-------: |
-|   VLESS   |   TCP-XTLS①  |    ✅   |  ❌  |    ✅    |       ❌      |   ❌   |     ✅     |
-|   VLESS   | TCP-TLS(Mux) |    ✅   |  ❌  |    ✅    |       ✅      |   ❌   |     ✅     |
-|   VLESS   |  WS-TLS(Mux) |    ✅   |  ✅  |    ✅    |       ✅      |   ❌   |     ✅     |
-|   VMess   | TCP-TLS(Mux) |    ✅   |  ❌  |    ✅    |       ✅      |   ✅   |     ✅     |
-|   VMess   |  WS-TLS(Mux) |    ✅   |  ✅  |    ✅    |       ✅      |   ✅   |     ✅     |
-|  Trojan③  |    TCP-TLS   |    ✅   |  ❌  |    ✅    |       ✅      |   ✅   |     ✅     |
-| Trojan-Go | TCP-TLS(Mux) |    ✅   |  ❌  |    ✅    |       ✅      |   ❌   |     ❌     |
-| Trojan-Go |  WS-TLS(Mux) |    ✅   |  ✅  |    ✅    |       ✅      |   ❌   |     ❌     |
+|  Protocol | Transport | MUX | Direct | CDN | Qv2ray② | Shadowrocket | Clash | v2rayN(G) |
+| :-------: | :-------: | :-: | :----: | :-: | :-----: | :----------: | :---: | :-------: |
+|   VLESS   | TCP-XTLS① |  ❌  |    ✅   |  ❌  |    ✅    |       ❌      |   ❌   |     ✅     |
+|   VLESS   |  TCP-TLS  |  ✅  |    ✅   |  ❌  |    ✅    |       ✅      |   ❌   |     ✅     |
+|   VLESS   |   WS-TLS  |  ✅  |    ✅   |  ✅  |    ✅    |       ✅      |   ❌   |     ✅     |
+|   VMess   |  TCP-TLS  |  ✅  |    ✅   |  ❌  |    ✅    |       ✅      |   ✅   |     ✅     |
+|   VMess   |   WS-TLS  |  ✅  |    ✅   |  ✅  |    ✅    |       ✅      |   ✅   |     ✅     |
+|  Trojan③  |  TCP-TLS  |  ❌  |    ✅   |  ❌  |    ✅    |       ✅      |   ✅   |     ✅     |
+| Trojan-Go |  TCP-TLS  |  ✅  |    ✅   |  ❌  |    ✅    |       ✅      |   ❌   |     ❌     |
+| Trojan-Go |   WS-TLS  |  ✅  |    ✅   |  ✅  |    ✅    |       ✅      |   ❌   |     ❌     |
 
 ✅完全支持 ❌不支持
 
@@ -80,7 +80,7 @@ chmod +x deploy.sh && bash deploy.sh
 
 **③** Trojan-Go 兼容原版 Trojan 协议。
 
-**⚝ 可同时部署 Trojan-Go 和 V2Ray 服务端，最大支持共用分流 2 种 WS-TLS 和 2 种 TCP-TLS（协议类型按需自由组合）**
+**可同时部署 Trojan-Go 和 V2Ray 服务端，最大支持共用分流 2 种 WS-TLS 和 2 种 TCP-TLS（协议类型按需自由组合）**
 
 ## 部署建议
 
