@@ -57,7 +57,7 @@ WARN="${Yellow}[警告]${Font}"
 Error="${Red}[错误]${Font}"
 
 #版本、初始化变量
-shell_version="1.176"
+shell_version="1.177"
 tsp_cfg_version="0.61.1"
 #install_mode="docker"
 upgrade_mode="none"
@@ -67,6 +67,7 @@ tsp_conf_dir="/etc/tls-shunt-proxy"
 trojan_conf_dir="/etc/trojan-go"
 v2ray_conf_dir="/etc/v2ray"
 tsp_conf="${tsp_conf_dir}/config.yaml"
+tsp_cert_dir="/etc/ssl/tls-shunt-proxy/certificates/acme-v02.api.letsencrypt.org-directory/"
 trojan_conf="${trojan_conf_dir}/config.json"
 v2ray_conf="${v2ray_conf_dir}/config.json"
 web_dir="/home/wwwroot"
@@ -164,7 +165,7 @@ chrony_install() {
 }
 
 dependency_install() {
-    ${INS} install curl git lsof unzip 
+    ${INS} install curl git lsof unzip
     judge "安装依赖包 curl git lsof unzip"
     ${INS} install haveged
     systemctl start haveged && systemctl enable haveged
@@ -902,7 +903,7 @@ deployed_status_check() {
         v2ray_ws_port=$(grep '#V2Ray_WS_Port' ${tsp_conf} | sed -r 's/.*:(.*);.*/\1/') &&
         v2ray_ws_mode=$(grep '#V2Ray_WS_Port' ${tsp_conf} | sed -r 's/.*V2Ray_WS_Port:(.*) */\1/') &&
         v2ray_ws_path=$(grep '#V2Ray_WS_Path' ${tsp_conf} | sed -r 's/.*: (.*) #.*/\1/') &&
-        menu_req_check tls-shunt-proxy
+        menu_req_check tls-shunt-proxy && cert_stat_check tls-shunt-proxy
 
     echo -e "${OK} ${GreenBG} 检测组件部署状态... ${Font}"
     systemctl is-active "docker" &>/dev/null && docker ps -a | grep Trojan-Go &>/dev/null && trojan_stat="installed"
@@ -1054,6 +1055,14 @@ info() {
     echo -e "\n————————————————————————————————————————————————————\n"
     read -t 60 -n 1 -s -rp "按任意键继续（60s）..."
     clear
+}
+
+cert_stat_check() {
+    echo -e "${OK} ${GreenBG} 检测 $1 相关证书信息... ${Font}"
+    if systemctl is-active "$1" &>/dev/null; then
+        [[ $1 = "tls-shunt-proxy" ]] && [[ ! -f ${tsp_cert_dir}/${TSP_Domain}/${TSP_Domain}.crt || ! -f ${tsp_cert_dir}/${TSP_Domain}/${TSP_Domain}.json || ! -f ${tsp_cert_dir}/${TSP_Domain}/${TSP_Domain}.key ]] &&
+            echo -e "${Yellow}检测到 SSL 证书异常 或 尚未申请成功，请执行以下命令：\n#systemctl restart tls-shunt-proxy\n#journalctl -u tls-shunt-proxy.service\n检查日志后，重新运行脚本${Font}" && exit 4
+    fi
 }
 
 menu_req_check() {
