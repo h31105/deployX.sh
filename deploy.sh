@@ -682,6 +682,7 @@ tsp_sync() {
 }
 
 install_trojan() {
+    cert_stat_check tls-shunt-proxy
     systemctl is-active "docker" &>/dev/null || install_docker
     prereqcheck
     trojan_reset
@@ -691,6 +692,7 @@ install_trojan() {
 }
 
 install_v2ray() {
+    cert_stat_check tls-shunt-proxy
     systemctl is-active "docker" &>/dev/null || install_docker
     prereqcheck
     v2ray_mode_type
@@ -896,7 +898,6 @@ deployed_status_check() {
         v2ray_ws_mode=$(grep '#V2Ray_WS_Port' ${tsp_conf} | sed -r 's/.*V2Ray_WS_Port:(.*) */\1/') &&
         v2ray_ws_path=$(grep '#V2Ray_WS_Path' ${tsp_conf} | sed -r 's/.*: (.*) #.*/\1/') &&
         menu_req_check tls-shunt-proxy
-    cert_stat_check tls-shunt-proxy
 
     echo -e "${OK} ${GreenBG} 检测组件部署状态... ${Font}"
     systemctl is-active "docker" &>/dev/null && docker ps -a | grep Trojan-Go &>/dev/null && trojan_stat="installed"
@@ -1054,7 +1055,7 @@ cert_stat_check() {
     echo -e "${OK} ${GreenBG} 检测证书状态信息... ${Font}"
     if systemctl is-active "$1" &>/dev/null; then
         [[ $1 = "tls-shunt-proxy" ]] && [[ ! -f ${tsp_cert_dir}/${TSP_Domain}/${TSP_Domain}.crt || ! -f ${tsp_cert_dir}/${TSP_Domain}/${TSP_Domain}.json || ! -f ${tsp_cert_dir}/${TSP_Domain}/${TSP_Domain}.key ]] &&
-            echo -e "${Yellow}检测到 SSL 证书异常 或 尚未申请成功，请执行以下命令：\n#systemctl restart tls-shunt-proxy\n#journalctl -u tls-shunt-proxy.service\n检查日志后，重新运行脚本${Font}" && exit 4
+            echo -e "${Yellow}未检测到有效的 SSL 证书，请执行以下命令：\n#systemctl restart tls-shunt-proxy\n#journalctl -u tls-shunt-proxy.service\n检查日志，待证书完成申请后，重新运行脚本${Font}" && exit 4
     fi
 }
 
