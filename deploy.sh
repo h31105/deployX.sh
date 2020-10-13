@@ -57,7 +57,7 @@ WARN="${Yellow}[警告]${Font}"
 Error="${Red}[错误]${Font}"
 
 #版本、初始化变量
-shell_version="1.175"
+shell_version="1.176"
 tsp_cfg_version="0.61.1"
 #install_mode="docker"
 upgrade_mode="none"
@@ -81,20 +81,20 @@ VERSION=$(echo "${VERSION}" | awk -F "[()]" '{print $2}')
 check_system() {
     if [[ "${ID}" == "centos" && ${VERSION_ID} -eq 7 ]]; then
         echo -e "${OK} ${GreenBG} 当前系统为 Centos ${VERSION_ID} ${VERSION} ${Font}"
-        INS="yum"
+        INS="yum -y -q"
         yum install epel-release -y -q
     elif [[ "${ID}" == "centos" && ${VERSION_ID} -ge 8 ]]; then
         echo -e "${OK} ${GreenBG} 当前系统为 Centos ${VERSION_ID} ${VERSION} ${Font}"
-        INS="dnf"
+        INS="dnf -y"
         dnf install epel-release -y -q
         dnf config-manager --set-enabled PowerTools
     elif [[ "${ID}" == "debian" && ${VERSION_ID} -ge 8 ]]; then
         echo -e "${OK} ${GreenBG} 当前系统为 Debian ${VERSION_ID} ${VERSION} ${Font}"
-        INS="apt"
+        INS="apt -y -qq"
         $INS update
     elif [[ "${ID}" == "ubuntu" && $(echo "${VERSION_ID}" | cut -d '.' -f1) -ge 16 ]]; then
         echo -e "${OK} ${GreenBG} 当前系统为 Ubuntu ${VERSION_ID} ${UBUNTU_CODENAME} ${Font}"
-        INS="apt"
+        INS="apt -y -qq"
         $INS update
     else
         echo -e "${Error} ${RedBG} 当前系统为 ${ID} ${VERSION_ID} 不在支持的系统列表内，安装中断 ${Font}"
@@ -134,7 +134,7 @@ urlEncode() {
 }
 
 chrony_install() {
-    ${INS} -y install chrony
+    ${INS} install chrony
     judge "安装 Chrony 时间同步服务"
     timedatectl set-ntp true
     if [[ "${ID}" == "centos" ]]; then
@@ -164,17 +164,17 @@ chrony_install() {
 }
 
 dependency_install() {
-    ${INS} install curl git lsof unzip -y -q
+    ${INS} install curl git lsof unzip 
     judge "安装依赖包 curl git lsof unzip"
-    ${INS} -y install haveged
+    ${INS} install haveged
     systemctl start haveged && systemctl enable haveged
-    command -v bc >/dev/null 2>&1 || ${INS} -y install bc
+    command -v bc >/dev/null 2>&1 || ${INS} install bc
     judge "安装依赖包 bc"
-    command -v jq >/dev/null 2>&1 || ${INS} -y install jq
+    command -v jq >/dev/null 2>&1 || ${INS} install jq
     judge "安装依赖包 jq"
-    command -v sponge >/dev/null 2>&1 || ${INS} -y install moreutils
+    command -v sponge >/dev/null 2>&1 || ${INS} install moreutils
     judge "安装依赖包 moreutils"
-    command -v qrencode >/dev/null 2>&1 || ${INS} -y install qrencode
+    command -v qrencode >/dev/null 2>&1 || ${INS} install qrencode
     judge "安装依赖包 qrencode"
 }
 
@@ -572,6 +572,7 @@ web_camouflage() {
     cd $web_dir || exit
     websites[0]="https://github.com/h31105/LodeRunner_TotalRecall.git"
     websites[1]="https://github.com/h31105/adarkroom.git"
+    websites[2]="https://github.com/h31105/webosu"
     selectedwebsite=${websites[$RANDOM % ${#websites[@]}]}
     git clone ${selectedwebsite} web_camouflage
     judge "WebSite 伪装"
@@ -752,9 +753,9 @@ uninstall_all() {
     uninstall_portainer
     systemctl stop docker && systemctl disable docker
     if [[ "${ID}" == "centos" ]]; then
-        ${INS} -y remove docker-ce docker-ce-cli containerd.io docker docker-client docker-client-latest docker-common docker-latest docker-latest-logrotate docker-logrotate docker-engine
+        ${INS} remove docker-ce docker-ce-cli containerd.io docker docker-client docker-client-latest docker-common docker-latest docker-latest-logrotate docker-logrotate docker-engine
     else
-        ${INS} -y remove docker-ce docker-ce-cli containerd.io docker docker-engine docker.io containerd runc
+        ${INS} remove docker-ce docker-ce-cli containerd.io docker docker-engine docker.io containerd runc
     fi
     #rm -rf /var/lib/docker #Removes all docker data
     rm -rf /etc/systemd/system/docker.service
@@ -1013,7 +1014,7 @@ info() {
         [[ $trojan_ws_mode = true ]] &&
             echo -e "Trojan-Go WebSocket Path: ${tjwspath}" && echo -e "Trojan-Go WebSocket Host: ${tjwshost}"
         [[ $trojan_tcp_mode = true ]] && echo -e "\n Trojan-Go TCP TLS 分享链接：" &&
-            echo -e " Trojan 客户端（原版协议）：\n trojan://${tjpassword}@${TSP_Domain}:${TSP_Port}?sni=${TSP_Domain}&peer=${TSP_Domain}&allowinsecure=0&mux=0#${HOSTNAME}-TCP" &&
+            echo -e " Trojan 客户端：\n trojan://${tjpassword}@${TSP_Domain}:${TSP_Port}?sni=${TSP_Domain}&allowinsecure=0&mux=0#${HOSTNAME}-TCP" &&
             echo -e " Qv2ray 客户端（需安装 Trojan-Go 插件）：\n trojan-go://${tjpassword}@${TSP_Domain}:${TSP_Port}/?sni=${TSP_Domain}&type=original&host=${TSP_Domain}#${HOSTNAME}-TCP" &&
             echo -e " Shadowrocket 二维码：" &&
             qrencode -t utf8 -s 1 "trojan://${tjpassword}@${TSP_Domain}:${TSP_Port}?sni=${TSP_Domain}&peer=${TSP_Domain}&allowinsecure=0&mux=0#${HOSTNAME}-TCP"
@@ -1037,13 +1038,13 @@ info() {
         [[ $v2ray_ws_mode = "vless" ]] && echo -e "\nVLESS WS UUID: ${VLWSID}" &&
             echo -e "VLESS 加密方式: none" && echo -e "VLESS WebSocket Host: ${TSP_Domain}" && echo -e "VLESS WebSocket Path: ${v2wspath}"
         [[ $v2ray_tcp_mode = "vmess" ]] && echo -e "\n VMess TCP TLS 分享链接：" &&
-            echo -e " V2RayN 格式：\n vmess://$(echo "{\"add\":\"${TSP_Domain}\",\"aid\":\"6\",\"host\":\"${TSP_Domain}\",\"peer\":\"${TSP_Domain}\",\"id\":\"${VMTID}\",\"net\":\"tcp\",\"port\":\"${TSP_Port}\",\"ps\":\"${HOSTNAME}-TCP\",\"tls\":\"tls\",\"type\":\"none\",\"v\":\"2\"}" | base64 -w 0)" &&
-            echo -e " VMess 新版格式：\n vmess://tcp+tls:${VMTID}-6@${TSP_Domain}:${TSP_Port}/?tlsServerName=${TSP_Domain}#$(urlEncode "${HOSTNAME}-TCP")" &&
+            echo -e " V2RayN 格式：\n vmess://$(echo "{\"add\":\"${TSP_Domain}\",\"aid\":\"0\",\"host\":\"${TSP_Domain}\",\"peer\":\"${TSP_Domain}\",\"id\":\"${VMTID}\",\"net\":\"tcp\",\"port\":\"${TSP_Port}\",\"ps\":\"${HOSTNAME}-TCP\",\"tls\":\"tls\",\"type\":\"none\",\"v\":\"2\"}" | base64 -w 0)" &&
+            echo -e " VMess 新版格式：\n vmess://tcp+tls:${VMTID}-0@${TSP_Domain}:${TSP_Port}/?tlsServerName=${TSP_Domain}#$(urlEncode "${HOSTNAME}-TCP")" &&
             echo -e " Shadowrocket 二维码：" &&
             qrencode -t utf8 -s 1 "vmess://$(echo "auto:${VMTID}@${TSP_Domain}:${TSP_Port}" | base64 -w 0)?tls=1&mux=1&peer=${TSP_Domain}&allowInsecure=0&tfo=0&remarks=${HOSTNAME}-TCP"
         [[ $v2ray_ws_mode = "vmess" ]] && echo -e "\n VMess WebSocket TLS 分享链接：" &&
-            echo -e " V2RayN 格式：\n vmess://$(echo "{\"add\":\"${TSP_Domain}\",\"aid\":\"6\",\"host\":\"${TSP_Domain}\",\"peer\":\"${TSP_Domain}\",\"id\":\"${VMWSID}\",\"net\":\"ws\",\"path\":\"${v2wspath}\",\"port\":\"${TSP_Port}\",\"ps\":\"${HOSTNAME}-WS\",\"tls\":\"tls\",\"type\":\"none\",\"v\":\"2\"}" | base64 -w 0)" &&
-            echo -e " VMess 新版格式：\n vmess://ws+tls:${VMWSID}-6@${TSP_Domain}:${TSP_Port}/?path=$(urlEncode "${v2wspath}")&host=${TSP_Domain}&tlsServerName=${TSP_Domain}#$(urlEncode "${HOSTNAME}-WS")" &&
+            echo -e " V2RayN 格式：\n vmess://$(echo "{\"add\":\"${TSP_Domain}\",\"aid\":\"0\",\"host\":\"${TSP_Domain}\",\"peer\":\"${TSP_Domain}\",\"id\":\"${VMWSID}\",\"net\":\"ws\",\"path\":\"${v2wspath}\",\"port\":\"${TSP_Port}\",\"ps\":\"${HOSTNAME}-WS\",\"tls\":\"tls\",\"type\":\"none\",\"v\":\"2\"}" | base64 -w 0)" &&
+            echo -e " VMess 新版格式：\n vmess://ws+tls:${VMWSID}-0@${TSP_Domain}:${TSP_Port}/?path=$(urlEncode "${v2wspath}")&host=${TSP_Domain}&tlsServerName=${TSP_Domain}#$(urlEncode "${HOSTNAME}-WS")" &&
             echo -e " Shadowrocket 二维码：" &&
             qrencode -t utf8 -s 1 "vmess://$(echo "auto:${VMWSID}@${TSP_Domain}:${TSP_Port}" | base64 -w 0)?tls=1&mux=1&peer=${TSP_Domain}&allowInsecure=0&tfo=0&remarks=${HOSTNAME}-WS&obfs=websocket&obfsParam=${TSP_Domain}&path=${v2wspath}"
         [[ $v2ray_tcp_mode = "vless" ]] && echo -e "\n VLESS TCP TLS 分享链接：暂未发布官方规范"
@@ -1107,7 +1108,7 @@ menu() {
         [[ $v2ray_stat = "installed" && -f ${v2ray_conf} ]] && echo -e "${Green}8.${Font}  修改 V2Ray 代理配置"
     systemctl is-active "tls-shunt-proxy" &>/dev/null &&
         echo -e "——————————————————————查看信息——————————————————————" &&
-        echo -e "${Green}9.${Font}  查看配置信息"
+        echo -e "${Green}9.${Font}  查看 配置信息"
     echo -e "——————————————————————杂项管理——————————————————————"
     [ -f ${tsp_conf} ] && echo -e "${Green}10.${Font} 升级 TLS-Shunt-Proxy/Docker 基础平台" &&
         echo -e "${Green}11.${Font} ${Yellow}卸载${Font} 已安装的所有组件"
