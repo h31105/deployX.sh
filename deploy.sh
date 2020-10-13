@@ -67,7 +67,7 @@ tsp_conf_dir="/etc/tls-shunt-proxy"
 trojan_conf_dir="/etc/trojan-go"
 v2ray_conf_dir="/etc/v2ray"
 tsp_conf="${tsp_conf_dir}/config.yaml"
-tsp_cert_dir="/etc/ssl/tls-shunt-proxy/certificates/acme-v02.api.letsencrypt.org-directory/"
+tsp_cert_dir="/etc/ssl/tls-shunt-proxy/certificates/acme-v02.api.letsencrypt.org-directory"
 trojan_conf="${trojan_conf_dir}/config.json"
 v2ray_conf="${v2ray_conf_dir}/config.json"
 web_dir="/home/wwwroot"
@@ -903,7 +903,8 @@ deployed_status_check() {
         v2ray_ws_port=$(grep '#V2Ray_WS_Port' ${tsp_conf} | sed -r 's/.*:(.*);.*/\1/') &&
         v2ray_ws_mode=$(grep '#V2Ray_WS_Port' ${tsp_conf} | sed -r 's/.*V2Ray_WS_Port:(.*) */\1/') &&
         v2ray_ws_path=$(grep '#V2Ray_WS_Path' ${tsp_conf} | sed -r 's/.*: (.*) #.*/\1/') &&
-        menu_req_check tls-shunt-proxy && cert_stat_check tls-shunt-proxy
+        menu_req_check tls-shunt-proxy
+    cert_stat_check tls-shunt-proxy
 
     echo -e "${OK} ${GreenBG} 检测组件部署状态... ${Font}"
     systemctl is-active "docker" &>/dev/null && docker ps -a | grep Trojan-Go &>/dev/null && trojan_stat="installed"
@@ -952,7 +953,7 @@ deployed_status_check() {
                 systemctl is-active "chrony" &>/dev/null || chrony_stat=inactive
             fi
             if [[ $chrony_stat = inactive ]]; then
-                echo -e "${Error} ${RedBG} 检测到 Chrony 时间同步服务未启动，若系统时间不准确将会严重影响 V2Ray VMess 协议的可用性 ${Font}\n${WARN} ${Yellow} 当前系统时间: $(date)，请确认时间是否准确，误差范围±3分钟内（Y）或 尝试修复时间同步服务（R） [R]: ${Font}"
+                echo -e "${Error} ${RedBG} 检测到 Chrony 时间同步服务未启动，若系统时间不准确将会严重影响 V2Ray VMess 协议的可用性 ${Font}\n${WARN} ${Yellow} 当前系统时间: $(date)，请确认时间是否准确，误差范围±3分钟内（Y）或 尝试修复时间同步服务（R）[R]: ${Font}"
                 read -r chrony_confirm
                 [[ -z ${chrony_confirm} ]] && chrony_confirm="R"
                 case $chrony_confirm in
@@ -1058,7 +1059,7 @@ info() {
 }
 
 cert_stat_check() {
-    echo -e "${OK} ${GreenBG} 检测 $1 相关证书信息... ${Font}"
+    echo -e "${OK} ${GreenBG} 检测 SSL 证书信息... ${Font}"
     if systemctl is-active "$1" &>/dev/null; then
         [[ $1 = "tls-shunt-proxy" ]] && [[ ! -f ${tsp_cert_dir}/${TSP_Domain}/${TSP_Domain}.crt || ! -f ${tsp_cert_dir}/${TSP_Domain}/${TSP_Domain}.json || ! -f ${tsp_cert_dir}/${TSP_Domain}/${TSP_Domain}.key ]] &&
             echo -e "${Yellow}检测到 SSL 证书异常 或 尚未申请成功，请执行以下命令：\n#systemctl restart tls-shunt-proxy\n#journalctl -u tls-shunt-proxy.service\n检查日志后，重新运行脚本${Font}" && exit 4
