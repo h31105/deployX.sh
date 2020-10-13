@@ -57,7 +57,7 @@ WARN="${Yellow}[警告]${Font}"
 Error="${Red}[错误]${Font}"
 
 #版本、初始化变量
-shell_version="1.177"
+shell_version="1.178"
 tsp_cfg_version="0.61.1"
 #install_mode="docker"
 upgrade_mode="none"
@@ -729,11 +729,6 @@ install_tls_shunt_proxy() {
     install_tsp
 }
 
-bbr_boost_sh() {
-    [ -f "tcp.sh" ] && rm -rf ./tcp.sh
-    wget -N --no-check-certificate "https://raw.githubusercontent.com/ylx2016/Linux-NetSpeed/master/tcp.sh" && chmod +x tcp.sh && ./tcp.sh
-}
-
 uninstall_all() {
     echo -e "${RedBG} !!!此操作将删除 TLS-Shunt-Proxy、Docker 平台和此脚本所安装的容器数据!!! ${Font}"
     read -rp "请在确认后，输入 YES（区分大小写）:" uninstall
@@ -850,7 +845,7 @@ update_sh() {
         case $update_confirm in
         [yY][eE][sS] | [yY])
             wget -N --no-check-certificate https://raw.githubusercontent.com/h31105/trojan_v2_docker_onekey/${github_branch}/deploy.sh
-            echo -e "${OK} ${GreenBG} 更新完成 ${Font}"
+            echo -e "${OK} ${GreenBG} 更新完成，请重新运行脚本：\n#./deploy.sh ${Font}"
             exit 0
             ;;
         *) ;;
@@ -865,9 +860,6 @@ list() {
     uninstall)
         deployed_status_check
         uninstall_all
-        ;;
-    boost)
-        bbr_boost_sh
         ;;
     sync)
         deployed_status_check
@@ -1059,7 +1051,7 @@ info() {
 }
 
 cert_stat_check() {
-    echo -e "${OK} ${GreenBG} 检测 SSL 证书信息... ${Font}"
+    echo -e "${OK} ${GreenBG} 检测证书状态信息... ${Font}"
     if systemctl is-active "$1" &>/dev/null; then
         [[ $1 = "tls-shunt-proxy" ]] && [[ ! -f ${tsp_cert_dir}/${TSP_Domain}/${TSP_Domain}.crt || ! -f ${tsp_cert_dir}/${TSP_Domain}/${TSP_Domain}.json || ! -f ${tsp_cert_dir}/${TSP_Domain}/${TSP_Domain}.key ]] &&
             echo -e "${Yellow}检测到 SSL 证书异常 或 尚未申请成功，请执行以下命令：\n#systemctl restart tls-shunt-proxy\n#journalctl -u tls-shunt-proxy.service\n检查日志后，重新运行脚本${Font}" && exit 4
@@ -1124,6 +1116,7 @@ menu() {
     [ -f ${tsp_conf} ] && echo -e "${Green}10.${Font} 升级 TLS-Shunt-Proxy/Docker 基础平台" &&
         echo -e "${Green}11.${Font} ${Yellow}卸载${Font} 已安装的所有组件"
     echo -e "${Green}12.${Font} 安装 4合1 BBR 锐速脚本"
+    echo -e "${Green}13.${Font} 运行 SuperSpeed 测速脚本"
     echo -e "${Green}0.${Font}  退出脚本 "
     echo -e "————————————————————————————————————————————————————\n"
     read -rp "请输入数字：" menu_num
@@ -1218,13 +1211,17 @@ menu() {
         [[ -z ${kernel_change} ]] && kernel_change="no"
         case $kernel_change in
         YES)
-            bbr_boost_sh
+            [ -f "tcp.sh" ] && rm -rf ./tcp.sh
+            wget -N --no-check-certificate "https://raw.githubusercontent.com/ylx2016/Linux-NetSpeed/master/tcpx.sh" && chmod +x tcpx.sh && ./tcpx.sh
             ;;
         *)
             echo -e "${RedBG} 我再想想 ${Font}"
             exit 0
             ;;
         esac
+        ;;
+    13)
+        bash <(curl -Lso- https://git.io/superspeed)
         ;;
     0)
         exit 0

@@ -1,10 +1,10 @@
 # TSP & Trojan-Go / V2Ray 容器化管理部署脚本
 
-[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fh31105%2Ftrojan_v2_docker_onekey.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2Fh31105%2Ftrojan_v2_docker_onekey?ref=badge_shield)
 ![GitHub top language](https://img.shields.io/github/languages/top/h31105/trojan_v2_docker_onekey?style=flat)
-[![Codacy Badge](https://api.codacy.com/project/badge/Grade/b9dd1b56b54b4a45bc34fede5a71ac0a)](https://app.codacy.com/gh/h31105/trojan_v2_docker_onekey?utm_source=github.com&utm_medium=referral&utm_content=h31105/trojan_v2_docker_onekey&utm_campaign=Badge_Grade_Settings)
 ![GitHub release (latest by date)](https://img.shields.io/github/v/release/h31105/trojan_v2_docker_onekey?style=flat)
 ![Visitors](https://visitor-badge.glitch.me/badge?page_id=h31105.trojan_v2_docker_onekey)
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fh31105%2Ftrojan_v2_docker_onekey.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2Fh31105%2Ftrojan_v2_docker_onekey?ref=badge_shield)
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/b9dd1b56b54b4a45bc34fede5a71ac0a)](https://app.codacy.com/gh/h31105/trojan_v2_docker_onekey?utm_source=github.com&utm_medium=referral&utm_content=h31105/trojan_v2_docker_onekey&utm_campaign=Badge_Grade_Settings)
 [![Chat on Telegram](https://img.shields.io/badge/chat%20-%20telegram-brightgreen.svg)](https://t.me/trojanv2)
 
 基于 Docker 容器架构的 Trojan-Go/VLESS/VMess-TCP/WS-TLS 分流部署&管理脚本
@@ -118,8 +118,10 @@ chmod +x deploy.sh && bash deploy.sh
     \*请在证书过期前 30 天内，手动暂停 CDN 加速后重启 TSP 完成证书续签。
 
     ```Bash
-    systemctl restart tls-shunt-proxy #重启 TSP 触发证书续签
-    journalctl -u tls-shunt-proxy.service --since today #查看日志，观察证书续签结果
+    #重启 TSP 触发证书续签
+    systemctl restart tls-shunt-proxy
+    #查看日志，观察证书续签结果
+    journalctl -u tls-shunt-proxy.service --since today
     ```
 
     \*如果您的域名解析服务支持**分线路**设置 DNS 记录（例如 Aliyun、DNSpod），可通过设置**境外线路**解析为 VPS IP，其他线路解析为 CDN 记录来解决此问题。
@@ -172,15 +174,19 @@ chmod +x deploy.sh && bash deploy.sh
 -   Trojan-Go：`/etc/trojan-go/config.json`
 -   V2Ray：`/etc/v2ray/config.json`
 
-## 其他参考
+## 致谢
 
-本脚本最初由**wulabing/V2Ray_ws-tls_bash_onekey**脚本改写，脚本中使用的 Docker 镜像来自于**秋水逸冰（Teddysun）**，在此感谢！
-
--   [V2Ray_ws-tls_bash_onekey](https://github.com/wulabing/V2Ray_ws-tls_bash_onekey)
--   [teddysun@DockerHub](https://hub.docker.com/u/teddysun/)
+-   [V2Ray_WS-TLS_Bash_Onekey](https://github.com/wulabing/V2Ray_ws-tls_bash_onekey)
+-   [Teddysun@DockerHub](https://hub.docker.com/u/teddysun/)
 -   [Trojan-Go](https://github.com/p4gefau1t/trojan-go)
 -   [V2Ray](https://www.v2fly.org/)
 -   [TLS-Shunt-Proxy](https://github.com/liberal-boy/tls-shunt-proxy)
 -   [Docker](https://www.docker.com/)
 -   [WatchTower](https://github.com/containrrr/watchtower)
 -   [Portainer](https://github.com/portainer/portainer)
+-   [BBR-Script](https://github.com/ylx2016/Linux-NetSpeed)
+-   [SuperSpeed](https://github.com/ernisn/superspeed)
+
+## Stargazers over time
+
+[![Stargazers over time](https://starchart.cc/h31105/trojan_v2_docker_onekey.svg)](https://starchart.cc/h31105/trojan_v2_docker_onekey)
