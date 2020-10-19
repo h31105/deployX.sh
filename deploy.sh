@@ -57,7 +57,7 @@ WARN="${Yellow}[警告]${Font}"
 Error="${Red}[错误]${Font}"
 
 #版本、初始化变量
-shell_version="1.179"
+shell_version="1.179.1"
 tsp_cfg_version="0.61.1"
 #install_mode="docker"
 upgrade_mode="none"
@@ -1071,7 +1071,6 @@ User-agent: *
 Disallow: /
 EOF
         subscribe_file="$(head -n 10 /dev/urandom | md5sum | head -c ${random_num})"
-
         subscribe_links | base64 -w 0 >"$(grep '#Website' ${tsp_conf} | sed -r 's/.*: (.*) #.*/\1/')"/subscribe"${subscribe_file}"
         echo -e "订阅链接：\n https://${TSP_Domain}/subscribe${subscribe_file} \n${Yellow}请注意：脚本生成的订阅链接包含当前服务端部署的所有协议（VLESS 除外）代理配置信息，出于信息安全考虑，链接地址会在每次查看时随机刷新！\n另外，由于不同客户端对代理协议的兼容支持程度各不相同，请根据实际情况自行调整！${Font}"
     fi
