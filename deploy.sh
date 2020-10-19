@@ -57,7 +57,7 @@ WARN="${Yellow}[警告]${Font}"
 Error="${Red}[错误]${Font}"
 
 #版本、初始化变量
-shell_version="1.178"
+shell_version="1.179"
 tsp_cfg_version="0.61.1"
 #install_mode="docker"
 upgrade_mode="none"
@@ -593,7 +593,7 @@ install_tsp() {
     bash <(curl -L -s https://raw.githubusercontent.com/liberal-boy/tls-shunt-proxy/master/dist/install.sh)
     judge "安装 TLS-Shunt-Proxy"
     chown -R tls-shunt-proxy:tls-shunt-proxy /etc/ssl/tls-shunt-proxy
-    setcap "cap_net_bind_service=+ep" /usr/local/bin/tls-shunt-proxy
+    command -v setcap >/dev/null 2>&1 && setcap "cap_net_bind_service=+ep" /usr/local/bin/tls-shunt-proxy
     config_exist_check ${tsp_conf}
     [[ -f ${tsp_conf} ]] && rm -rf ${tsp_conf}
     mkdir -p $tsp_conf_dir
@@ -682,7 +682,6 @@ tsp_sync() {
 }
 
 install_trojan() {
-    cert_stat_check tls-shunt-proxy
     systemctl is-active "docker" &>/dev/null || install_docker
     prereqcheck
     trojan_reset
@@ -692,7 +691,6 @@ install_trojan() {
 }
 
 install_v2ray() {
-    cert_stat_check tls-shunt-proxy
     systemctl is-active "docker" &>/dev/null || install_docker
     prereqcheck
     v2ray_mode_type
@@ -987,8 +985,9 @@ deployed_status_check() {
         echo -e " 其他容器：WatchTower：${Green}${watchtower_stat}${Font} / Portainer：${Green}${portainer_stat}${Font}\n"
 }
 
-info() {
+info_config() {
     deployed_status_check
+    cert_stat_check tls-shunt-proxy
     echo -e "\n————————————————————分流配置信息————————————————————"
     if [ -f ${tsp_conf} ]; then
         echo -e "TLS-Shunt-Proxy $(/usr/local/bin/tls-shunt-proxy --version 2>&1 | awk 'NR==1{gsub(/"/,"");print $3}')" &&
@@ -1008,16 +1007,6 @@ info() {
         [[ $trojan_tcp_mode = true ]] && echo -e "Trojan-Go 密码: ${tjpassword}"
         [[ $trojan_ws_mode = true ]] &&
             echo -e "Trojan-Go WebSocket Path: ${tjwspath}" && echo -e "Trojan-Go WebSocket Host: ${tjwshost}"
-        [[ $trojan_tcp_mode = true ]] && echo -e "\n Trojan-Go TCP TLS 分享链接：" &&
-            echo -e " Trojan 客户端：\n trojan://${tjpassword}@${TSP_Domain}:${TSP_Port}?sni=${TSP_Domain}&allowinsecure=0&mux=0#${HOSTNAME}-TCP" &&
-            echo -e " Qv2ray 客户端（需安装 Trojan-Go 插件）：\n trojan-go://${tjpassword}@${TSP_Domain}:${TSP_Port}/?sni=${TSP_Domain}&type=original&host=${TSP_Domain}#${HOSTNAME}-TCP" &&
-            echo -e " Shadowrocket 二维码：" &&
-            qrencode -t utf8 -s 1 "trojan://${tjpassword}@${TSP_Domain}:${TSP_Port}?sni=${TSP_Domain}&peer=${TSP_Domain}&allowinsecure=0&mux=0#${HOSTNAME}-TCP"
-        [[ $trojan_ws_mode = true ]] && echo -e "\n Trojan-Go WebSocket TLS 分享链接：" &&
-            echo -e " Trojan-Qt5 客户端：\n trojan://${tjpassword}@${TSP_Domain}:${TSP_Port}?sni=${TSP_Domain}&peer=${TSP_Domain}&allowinsecure=0&mux=1&ws=1&wspath=${tjwspath}&wshost=${TSP_Domain}#${HOSTNAME}-WS" &&
-            echo -e " Qv2ray 客户端（需安装 Trojan-Go 插件）：\n trojan-go://${tjpassword}@${TSP_Domain}:${TSP_Port}/?sni=${TSP_Domain}&type=ws&host=${TSP_Domain}&path=${tjwspath}#${HOSTNAME}-WS" &&
-            echo -e " Shadowrocket 二维码：" &&
-            qrencode -t utf8 -s 1 "trojan://${tjpassword}@${TSP_Domain}:${TSP_Port}?peer=${TSP_Domain}&mux=1&plugin=obfs-local;obfs=websocket;obfs-host=${TSP_Domain};obfs-uri=${tjwspath}#${HOSTNAME}-WS"
     fi
 
     if [[ -f ${v2ray_conf} && $v2ray_stat = "installed" ]]; then
@@ -1032,23 +1021,79 @@ info() {
             echo -e "VMess 加密方式: Auto" && echo -e "VMess WebSocket Host: ${TSP_Domain}" && echo -e "VMess WebSocket Path: ${v2wspath}"
         [[ $v2ray_ws_mode = "vless" ]] && echo -e "\nVLESS WS UUID: ${VLWSID}" &&
             echo -e "VLESS 加密方式: none" && echo -e "VLESS WebSocket Host: ${TSP_Domain}" && echo -e "VLESS WebSocket Path: ${v2wspath}"
-        [[ $v2ray_tcp_mode = "vmess" ]] && echo -e "\n VMess TCP TLS 分享链接：" &&
+    fi
+
+    echo -e "————————————————————————————————————————————————————\n"
+    read -t 60 -n 1 -s -rp "按任意键继续（60s）..."
+    clear
+}
+
+info_links() {
+    deployed_status_check
+    cert_stat_check tls-shunt-proxy
+    if [[ -f ${trojan_conf} && $trojan_stat = "installed" ]]; then
+        echo -e "———————————————— Trojan-Go 分享链接 ————————————————" &&
+            [[ $trojan_tcp_mode = true ]] && echo -e "\n Trojan-Go TCP TLS 分享链接：" &&
+            echo -e " Trojan 客户端：\n trojan://${tjpassword}@${TSP_Domain}:${TSP_Port}?sni=${TSP_Domain}&allowinsecure=0&mux=0#${HOSTNAME}-TCP" &&
+            echo -e " Qv2ray 客户端（需安装 Trojan-Go 插件）：\n trojan-go://${tjpassword}@${TSP_Domain}:${TSP_Port}/?sni=${TSP_Domain}&type=original&host=${TSP_Domain}#${HOSTNAME}-TCP" &&
+            echo -e " Shadowrocket 二维码：" &&
+            qrencode -t ANSIUTF8 -s 1 -m 2 "trojan://${tjpassword}@${TSP_Domain}:${TSP_Port}?sni=${TSP_Domain}&peer=${TSP_Domain}&allowinsecure=0&mux=0#${HOSTNAME}-TCP"
+        [[ $trojan_ws_mode = true ]] && echo -e "\n Trojan-Go WebSocket TLS 分享链接：" &&
+            echo -e " Trojan-Qt5 客户端：\n trojan://${tjpassword}@${TSP_Domain}:${TSP_Port}?sni=${TSP_Domain}&peer=${TSP_Domain}&allowinsecure=0&mux=1&ws=1&wspath=${tjwspath}&wshost=${TSP_Domain}#${HOSTNAME}-WS" &&
+            echo -e " Qv2ray 客户端（需安装 Trojan-Go 插件）：\n trojan-go://${tjpassword}@${TSP_Domain}:${TSP_Port}/?sni=${TSP_Domain}&type=ws&host=${TSP_Domain}&path=${tjwspath}#${HOSTNAME}-WS" &&
+            echo -e " Shadowrocket 二维码：" &&
+            qrencode -t ANSIUTF8 -s 1 -m 2 "trojan://${tjpassword}@${TSP_Domain}:${TSP_Port}?peer=${TSP_Domain}&mux=1&plugin=obfs-local;obfs=websocket;obfs-host=${TSP_Domain};obfs-uri=${tjwspath}#${HOSTNAME}-WS"
+    fi
+    read -t 60 -n 1 -s -rp "按任意键继续（60s）..."
+
+    if [[ -f ${v2ray_conf} && $v2ray_stat = "installed" ]]; then
+        echo -e "\n—————————————————— V2Ray 分享链接 ——————————————————" &&
+            [[ $v2ray_tcp_mode = "vmess" ]] && echo -e "\n VMess TCP TLS 分享链接：" &&
             echo -e " V2RayN 格式：\n vmess://$(echo "{\"add\":\"${TSP_Domain}\",\"aid\":\"0\",\"host\":\"${TSP_Domain}\",\"peer\":\"${TSP_Domain}\",\"id\":\"${VMTID}\",\"net\":\"tcp\",\"port\":\"${TSP_Port}\",\"ps\":\"${HOSTNAME}-TCP\",\"tls\":\"tls\",\"type\":\"none\",\"v\":\"2\"}" | base64 -w 0)" &&
             echo -e " VMess 新版格式：\n vmess://tcp+tls:${VMTID}-0@${TSP_Domain}:${TSP_Port}/?tlsServerName=${TSP_Domain}#$(urlEncode "${HOSTNAME}-TCP")" &&
             echo -e " Shadowrocket 二维码：" &&
-            qrencode -t utf8 -s 1 "vmess://$(echo "auto:${VMTID}@${TSP_Domain}:${TSP_Port}" | base64 -w 0)?tls=1&mux=1&peer=${TSP_Domain}&allowInsecure=0&tfo=0&remarks=${HOSTNAME}-TCP"
+            qrencode -t ANSIUTF8 -s 1 -m 2 "vmess://$(echo "auto:${VMTID}@${TSP_Domain}:${TSP_Port}" | base64 -w 0)?tls=1&mux=1&peer=${TSP_Domain}&allowInsecure=0&tfo=0&remarks=${HOSTNAME}-TCP"
         [[ $v2ray_ws_mode = "vmess" ]] && echo -e "\n VMess WebSocket TLS 分享链接：" &&
             echo -e " V2RayN 格式：\n vmess://$(echo "{\"add\":\"${TSP_Domain}\",\"aid\":\"0\",\"host\":\"${TSP_Domain}\",\"peer\":\"${TSP_Domain}\",\"id\":\"${VMWSID}\",\"net\":\"ws\",\"path\":\"${v2wspath}\",\"port\":\"${TSP_Port}\",\"ps\":\"${HOSTNAME}-WS\",\"tls\":\"tls\",\"type\":\"none\",\"v\":\"2\"}" | base64 -w 0)" &&
             echo -e " VMess 新版格式：\n vmess://ws+tls:${VMWSID}-0@${TSP_Domain}:${TSP_Port}/?path=$(urlEncode "${v2wspath}")&host=${TSP_Domain}&tlsServerName=${TSP_Domain}#$(urlEncode "${HOSTNAME}-WS")" &&
             echo -e " Shadowrocket 二维码：" &&
-            qrencode -t utf8 -s 1 "vmess://$(echo "auto:${VMWSID}@${TSP_Domain}:${TSP_Port}" | base64 -w 0)?tls=1&mux=1&peer=${TSP_Domain}&allowInsecure=0&tfo=0&remarks=${HOSTNAME}-WS&obfs=websocket&obfsParam=${TSP_Domain}&path=${v2wspath}"
-        [[ $v2ray_tcp_mode = "vless" ]] && echo -e "\n VLESS TCP TLS 分享链接：暂未发布官方规范"
-        [[ $v2ray_ws_mode = "vless" ]] && echo -e "\n VLESS WebSocket TLS 分享链接：暂未发布官方规范"
+            qrencode -t ANSIUTF8 -s 1 -m 2 "vmess://$(echo "auto:${VMWSID}@${TSP_Domain}:${TSP_Port}" | base64 -w 0)?tls=1&mux=1&peer=${TSP_Domain}&allowInsecure=0&tfo=0&remarks=${HOSTNAME}-WS&obfs=websocket&obfsParam=${TSP_Domain}&path=${v2wspath}"
+        [[ $v2ray_tcp_mode = "vless" ]] && echo -e "\n VLESS TCP TLS 分享链接：暂未发布官方规范，请遵照代理配置信息配置客户端。"
+        [[ $v2ray_ws_mode = "vless" ]] && echo -e "\n VLESS WebSocket TLS 分享链接：暂未发布官方规范，请遵照代理配置信息配置客户端。"
+    fi
+    read -t 60 -n 1 -s -rp "按任意键继续（60s）..."
+
+    if [[ -f ${v2ray_conf} || -f ${trojan_conf} ]]; then
+        echo -e "\n——————————————————— 订阅链接信息 ———————————————————"
+        rm -rf "$(grep '#Website' ${tsp_conf} | sed -r 's/.*: (.*) #.*/\1/')"/subscribe*
+        subscribe_file="$(head -n 10 /dev/urandom | md5sum | head -c ${random_num})"
+        subscribe_links | base64 -w 0 >"$(grep '#Website' ${tsp_conf} | sed -r 's/.*: (.*) #.*/\1/')"/subscribe"${subscribe_file}"        
+        echo -e "订阅链接：\n https://${TSP_Domain}/subscribe${subscribe_file} \n${Yellow}请注意：脚本生成的订阅链接包含当前服务端部署的所有协议（VLESS 除外）代理配置信息，出于信息安全考虑，链接地址会在每次查看时随机刷新！\n另外，由于不同客户端对代理协议的兼容支持程度各不相同，请根据实际情况自行调整！${Font}"
     fi
 
-    echo -e "\n————————————————————————————————————————————————————\n"
+    echo -e "————————————————————————————————————————————————————\n"
     read -t 60 -n 1 -s -rp "按任意键继续（60s）..."
     clear
+}
+
+subscribe_links() {
+    if [[ -f ${trojan_conf} && $trojan_stat = "installed" ]]; then
+        [[ $trojan_tcp_mode = true ]] &&
+            echo -e "trojan://${tjpassword}@${TSP_Domain}:${TSP_Port}?sni=${TSP_Domain}&peer=${TSP_Domain}&allowinsecure=0&mux=0#${HOSTNAME}-TCP" &&
+            echo -e "trojan-go://${tjpassword}@${TSP_Domain}:${TSP_Port}/?sni=${TSP_Domain}&type=original&host=${TSP_Domain}#${HOSTNAME}-Trojan-Go-TCP"
+        [[ $trojan_ws_mode = true ]] &&
+            echo -e "trojan-go://${tjpassword}@${TSP_Domain}:${TSP_Port}/?sni=${TSP_Domain}&type=ws&host=${TSP_Domain}&path=${tjwspath}#${HOSTNAME}-Trojan-Go-WS" &&
+            echo -e "trojan://${tjpassword}@${TSP_Domain}:${TSP_Port}?peer=${TSP_Domain}&mux=1&plugin=obfs-local;obfs=websocket;obfs-host=${TSP_Domain};obfs-uri=${tjwspath}#${HOSTNAME}-Trojan-Go-WS"
+    fi
+
+    if [[ -f ${v2ray_conf} && $v2ray_stat = "installed" ]]; then
+        [[ $v2ray_tcp_mode = "vmess" ]] &&
+            echo -e "vmess://$(echo "{\"add\":\"${TSP_Domain}\",\"aid\":\"0\",\"host\":\"${TSP_Domain}\",\"peer\":\"${TSP_Domain}\",\"id\":\"${VMTID}\",\"net\":\"tcp\",\"port\":\"${TSP_Port}\",\"ps\":\"${HOSTNAME}-TCP\",\"tls\":\"tls\",\"type\":\"none\",\"v\":\"2\"}" | base64 -w 0)" &&
+            echo -e "vmess://tcp+tls:${VMTID}-0@${TSP_Domain}:${TSP_Port}/?tlsServerName=${TSP_Domain}#$(urlEncode "${HOSTNAME}-新版格式-TCP")"
+        [[ $v2ray_ws_mode = "vmess" ]] &&
+            echo -e "vmess://$(echo "{\"add\":\"${TSP_Domain}\",\"aid\":\"0\",\"host\":\"${TSP_Domain}\",\"peer\":\"${TSP_Domain}\",\"id\":\"${VMWSID}\",\"net\":\"ws\",\"path\":\"${v2wspath}\",\"port\":\"${TSP_Port}\",\"ps\":\"${HOSTNAME}-WS\",\"tls\":\"tls\",\"type\":\"none\",\"v\":\"2\"}" | base64 -w 0)" &&
+            echo -e "vmess://ws+tls:${VMWSID}-0@${TSP_Domain}:${TSP_Port}/?path=$(urlEncode "${v2wspath}")&host=${TSP_Domain}&tlsServerName=${TSP_Domain}#$(urlEncode "${HOSTNAME}-新版格式-WS")"
+    fi
 }
 
 cert_stat_check() {
@@ -1112,12 +1157,13 @@ menu() {
         [[ $v2ray_stat = "installed" && -f ${v2ray_conf} ]] && echo -e "${Green}8.${Font}  修改 V2Ray 代理配置"
     systemctl is-active "tls-shunt-proxy" &>/dev/null &&
         echo -e "——————————————————————查看信息——————————————————————" &&
-        echo -e "${Green}9.${Font}  查看 配置信息"
+        echo -e "${Green}9.${Font}  查看 配置信息" &&
+        [[ $trojan_stat = "installed" || $v2ray_stat = "installed" ]] && echo -e "${Green}10.${Font} 查看 分享/订阅 链接"
     echo -e "——————————————————————杂项管理——————————————————————"
-    [ -f ${tsp_conf} ] && echo -e "${Green}10.${Font} 升级 TLS-Shunt-Proxy/Docker 基础平台" &&
-        echo -e "${Green}11.${Font} ${Yellow}卸载${Font} 已安装的所有组件"
-    echo -e "${Green}12.${Font} 安装 4合1 BBR 锐速脚本"
-    echo -e "${Green}13.${Font} 运行 SuperSpeed 测速脚本"
+    [ -f ${tsp_conf} ] && echo -e "${Green}11.${Font} 升级 TLS-Shunt-Proxy/Docker 基础平台" &&
+        echo -e "${Green}12.${Font} ${Yellow}卸载${Font} 已安装的所有组件"
+    echo -e "${Green}13.${Font} 安装 4合1 BBR 锐速脚本"
+    echo -e "${Green}14.${Font} 运行 SuperSpeed 测速脚本"
     echo -e "${Green}0.${Font}  退出脚本 "
     echo -e "————————————————————————————————————————————————————\n"
     read -rp "请输入数字：" menu_num
@@ -1172,9 +1218,12 @@ menu() {
         systemctl is-active "tls-shunt-proxy" &>/dev/null && [[ -f ${v2ray_conf} && $v2ray_stat = "installed" ]] && modify_v2ray
         ;;
     9)
-        systemctl is-active "tls-shunt-proxy" &>/dev/null && info
+        systemctl is-active "tls-shunt-proxy" &>/dev/null && info_config
         ;;
     10)
+        systemctl is-active "tls-shunt-proxy" &>/dev/null && info_links
+        ;;
+    11)
         [ -f ${tsp_conf} ] && read -rp "请确认是否升级 TLS-Shunt-Proxy 分流组件，(Y/N) [N]:" upgrade_mode
         [[ -z ${upgrade_mode} ]] && upgrade_mode="none"
         case $upgrade_mode in
@@ -1202,10 +1251,10 @@ menu() {
             ;;
         esac
         ;;
-    11)
+    12)
         [ -f ${tsp_conf} ] && uninstall_all
         ;;
-    12)
+    13)
         kernel_change="YES"
         systemctl is-active "docker" &>/dev/null && echo -e "${RedBG} !!!由于 Docker 与系统内核关联紧密，更换系统内核可能导致 Docker 无法正常使用!!! ${Font}\n${WARN} ${Yellow} 如果内核更换后 Docker 无法正常启动，请尝试通过 脚本 <选项10:升级 Docker> 修复 或 <选项11:完全卸载> 后重新部署 ${Font}" &&
             read -rp "请在确认后，输入 YES（区分大小写）:" kernel_change
@@ -1221,7 +1270,7 @@ menu() {
             ;;
         esac
         ;;
-    13)
+    14)
         bash <(curl -Lso- https://git.io/superspeed)
         ;;
     0)
