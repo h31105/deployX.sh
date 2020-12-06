@@ -32,7 +32,7 @@ command -v wget >/dev/null 2>&1 || sudo apt -y install wget
 2.  下载并执行脚本
 
 ```Bash
-wget -N --no-check-certificate -q https://cdn.jsdelivr.net/gh/h31105/trojan_v2_docker_onekey/deploy.sh && \
+wget -N --no-check-certificate -q https://raw.githubusercontent.com/h31105/deployX.sh/master/deploy.sh && \
 chmod +x deploy.sh && bash deploy.sh
 ```
 
