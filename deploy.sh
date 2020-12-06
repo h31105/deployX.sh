@@ -57,7 +57,7 @@ WARN="${Yellow}[警告]${Font}"
 Error="${Red}[错误]${Font}"
 
 #版本、初始化变量
-shell_version="1.179.1"
+shell_version="1.180"
 tsp_cfg_version="0.61.1"
 #install_mode="docker"
 upgrade_mode="none"
@@ -89,6 +89,7 @@ check_system() {
         INS="dnf -y"
         dnf install epel-release -y -q
         dnf config-manager --set-enabled PowerTools
+	dnf upgrade libseccomp
     elif [[ "${ID}" == "debian" && ${VERSION_ID} -ge 8 ]]; then
         echo -e "${OK} ${GreenBG} 当前系统为 Debian ${VERSION_ID} ${VERSION} ${Font}"
         INS="apt -y -qq"
@@ -204,6 +205,7 @@ domain_port_check() {
     read -rp "请输入TLS端口(默认443):" tspport
     [[ -z ${tspport} ]] && tspport="443"
     read -rp "请输入你的域名信息(例如:fk.gfw.com):" domain
+    domain=$(echo "${domain}" | tr '[:upper:]' '[:lower:]')
     domain_ip=$(ping -q -c 1 -t 1 "${domain}" | grep PING | sed -e "s/).*//" | sed -e "s/.*(//")
     echo -e "${OK} ${GreenBG} 正在获取 公网ip 信息，请耐心等待 ${Font}"
     local_ip=$(curl -s https://api64.ipify.org)
@@ -215,7 +217,7 @@ domain_port_check() {
         sleep 2
     else
         echo -e "${Error} ${RedBG} 请确保域名添加了正确的 A/AAAA 记录，否则将无法正常连接 ${Font}"
-        echo -e "${Error} ${RedBG} 域名DNS解析IP 与 本机IP 不匹配 是否继续安装？（Y/N）[N]${Font}" && read -r install
+        echo -e "${Error} ${RedBG} 域名DNS 解析IP 与 本机IP 不匹配将导致 SSL 证书申请失败，是否继续安装？（Y/N）[N]${Font}" && read -r install
         case $install in
         [yY][eE][sS] | [yY])
             echo -e "${GreenBG} 继续安装 ${Font}"
@@ -1043,8 +1045,8 @@ info_links() {
             echo -e " Qv2ray 客户端（需安装 Trojan-Go 插件）：\n trojan-go://${tjpassword}@${TSP_Domain}:${TSP_Port}/?sni=${TSP_Domain}&type=ws&host=${TSP_Domain}&path=${tjwspath}#${HOSTNAME}-WS" &&
             echo -e " Shadowrocket 二维码：" &&
             qrencode -t ANSIUTF8 -s 1 -m 2 "trojan://${tjpassword}@${TSP_Domain}:${TSP_Port}?peer=${TSP_Domain}&mux=1&plugin=obfs-local;obfs=websocket;obfs-host=${TSP_Domain};obfs-uri=${tjwspath}#${HOSTNAME}-WS"
+	read -t 60 -n 1 -s -rp "按任意键继续（60s）..."
     fi
-    read -t 60 -n 1 -s -rp "按任意键继续（60s）..."
 
     if [[ -f ${v2ray_conf} && $v2ray_stat = "installed" ]]; then
         echo -e "\n—————————————————— V2Ray 分享链接 ——————————————————" &&
@@ -1058,10 +1060,10 @@ info_links() {
             echo -e " VMess 新版格式：\n vmess://ws+tls:${VMWSID}-0@${TSP_Domain}:${TSP_Port}/?path=$(urlEncode "${v2wspath}")&host=${TSP_Domain}&tlsServerName=${TSP_Domain}#$(urlEncode "${HOSTNAME}-WS")" &&
             echo -e " Shadowrocket 二维码：" &&
             qrencode -t ANSIUTF8 -s 1 -m 2 "vmess://$(echo "auto:${VMWSID}@${TSP_Domain}:${TSP_Port}" | base64 -w 0)?tls=1&mux=1&peer=${TSP_Domain}&allowInsecure=0&tfo=0&remarks=${HOSTNAME}-WS&obfs=websocket&obfsParam=${TSP_Domain}&path=${v2wspath}"
-        [[ $v2ray_tcp_mode = "vless" ]] && echo -e "\n VLESS TCP TLS 分享链接：暂未发布官方规范，请遵照代理配置信息配置客户端。"
-        [[ $v2ray_ws_mode = "vless" ]] && echo -e "\n VLESS WebSocket TLS 分享链接：暂未发布官方规范，请遵照代理配置信息配置客户端。"
+        [[ $v2ray_tcp_mode = "vless" ]] && echo -e "\n VLESS TCP TLS 分享链接：暂未发布官方规范，请遵照脚本选项"9"中的代理配置信息手动配置客户端。"
+        [[ $v2ray_ws_mode = "vless" ]] && echo -e "\n VLESS WebSocket TLS 分享链接：暂未发布官方规范，请遵照脚本选项"9"中的代理配置信息手动配置客户端。"
+	read -t 60 -n 1 -s -rp "按任意键继续（60s）..."
     fi
-    read -t 60 -n 1 -s -rp "按任意键继续（60s）..."
 
     if [[ -f ${v2ray_conf} || -f ${trojan_conf} ]]; then
         echo -e "\n——————————————————— 订阅链接信息 ———————————————————"
@@ -1073,10 +1075,9 @@ EOF
         subscribe_file="$(head -n 10 /dev/urandom | md5sum | head -c ${random_num})"
         subscribe_links | base64 -w 0 >"$(grep '#Website' ${tsp_conf} | sed -r 's/.*: (.*) #.*/\1/')"/subscribe"${subscribe_file}"
         echo -e "订阅链接：\n https://${TSP_Domain}/subscribe${subscribe_file} \n${Yellow}请注意：脚本生成的订阅链接包含当前服务端部署的所有协议（VLESS 除外）代理配置信息，出于信息安全考虑，链接地址会在每次查看时随机刷新！\n另外，由于不同客户端对代理协议的兼容支持程度各不相同，请根据实际情况自行调整！${Font}"
+	read -t 60 -n 1 -s -rp "按任意键继续（60s）..."
     fi
 
-    echo -e "————————————————————————————————————————————————————\n"
-    read -t 60 -n 1 -s -rp "按任意键继续（60s）..."
     clear
 }
 
