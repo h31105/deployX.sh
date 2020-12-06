@@ -63,24 +63,21 @@ chmod +x deploy.sh && bash deploy.sh
 
 ## 协议、CDN 及客户端支持状况
 
-|  Protocol | Transport | MUX | Direct | CDN | Qv2ray② | Shadowrocket | Clash | v2rayN(G) |
+|  Protocol | Transport | MUX | Direct | CDN | Qv2ray① | Shadowrocket | Clash | v2rayN(G) |
 | :-------: | :-------: | :-: | :----: | :-: | :-----: | :----------: | :---: | :-------: |
-|   VLESS   | TCP-XTLS① |  ❌  |    ✅   |  ❌  |    ✅    |       ❌      |   ❌   |     ✅     |
 |   VLESS   |  TCP-TLS  |  ✅  |    ✅   |  ❌  |    ✅    |       ✅      |   ❌   |     ✅     |
 |   VLESS   |   WS-TLS  |  ✅  |    ✅   |  ✅  |    ✅    |       ✅      |   ❌   |     ✅     |
 |   VMess   |  TCP-TLS  |  ✅  |    ✅   |  ❌  |    ✅    |       ✅      |   ✅   |     ✅     |
 |   VMess   |   WS-TLS  |  ✅  |    ✅   |  ✅  |    ✅    |       ✅      |   ✅   |     ✅     |
-|  Trojan③  |  TCP-TLS  |  ❌  |    ✅   |  ❌  |    ✅    |       ✅      |   ✅   |     ✅     |
+|  Trojan②  |  TCP-TLS  |  ❌  |    ✅   |  ❌  |    ✅    |       ✅      |   ✅   |     ✅     |
 | Trojan-Go |  TCP-TLS  |  ✅  |    ✅   |  ❌  |    ✅    |       ✅      |   ❌   |     ❌     |
 | Trojan-Go |   WS-TLS  |  ✅  |    ✅   |  ✅  |    ✅    |       ✅      |   ❌   |     ❌     |
 
 ✅完全支持 ❌不支持
 
-**①** 暂不支持 VLESS PREVIEW XTLS 配置的脚本部署（计划中）。
+**①** Qv2Ray 客户端需根据协议类型安装对应插件及核心，才能正常使用。
 
-**②** Qv2Ray 客户端需根据协议类型安装对应插件及核心，才能正常使用。
-
-**③** Trojan-Go 兼容原版 Trojan 协议。
+**②** Trojan-Go 兼容原版 Trojan 协议。
 
 **可同时部署 Trojan-Go 和 V2Ray 服务端，最大支持共用分流 2 种 WS-TLS 和 2 种 TCP-TLS（协议类型按需自由组合）**
 
