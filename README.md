@@ -1,10 +1,9 @@
 # TSP & Trojan-Go / V2Ray 容器化管理部署脚本
 
-![GitHub top language](https://img.shields.io/github/languages/top/h31105/trojan_v2_docker_onekey?style=flat)
-![GitHub release (latest by date)](https://img.shields.io/github/v/release/h31105/trojan_v2_docker_onekey?style=flat)
-![Visitors](https://visitor-badge.glitch.me/badge?page_id=h31105.trojan_v2_docker_onekey)
-[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fh31105%2Ftrojan_v2_docker_onekey.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2Fh31105%2Ftrojan_v2_docker_onekey?ref=badge_shield)
-[![Codacy Badge](https://api.codacy.com/project/badge/Grade/b9dd1b56b54b4a45bc34fede5a71ac0a)](https://app.codacy.com/gh/h31105/trojan_v2_docker_onekey?utm_source=github.com&utm_medium=referral&utm_content=h31105/trojan_v2_docker_onekey&utm_campaign=Badge_Grade_Settings)
+![GitHub top language](https://img.shields.io/github/languages/top/h31105/deployX.sh?style=flat)
+![GitHub release (latest by date)](https://img.shields.io/github/v/release/h31105/deployX.sh?style=flat)
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fh31105%2FdeployX.sh.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2Fh31105%2FdeployX.sh?ref=badge_shield)
+[![Codacy Badge](https://app.codacy.com/project/badge/Grade/8446a6dc2f904122809e05ba61e83f62)](https://www.codacy.com/gh/h31105/deployX.sh/dashboard?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=h31105/deployX.sh&amp;utm_campaign=Badge_Grade)
 [![Chat on Telegram](https://img.shields.io/badge/chat%20-%20telegram-brightgreen.svg)](https://t.me/trojanv2)
 
 基于 Docker 容器架构的 Trojan-Go/VLESS/VMess-TCP/WS-TLS 分流部署&管理脚本
@@ -84,7 +83,7 @@ chmod +x deploy.sh && bash deploy.sh
 ## 部署建议
 
 脚本部署的完整架构拓扑如下图所示：
-<img src="https://raw.githubusercontent.com/h31105/trojan_v2_docker_onekey/master/docs/tp.png" width="100%" height="100%">
+<img src="https://raw.githubusercontent.com/h31105/deployX.sh/master/docs/tp.png" width="100%" height="100%">
 
 -   TLS-Shunt-Proxy 负责证书全自动管理和网站服务（HTTPS 默认 443 HTTP 80 自动跳转）
 
@@ -188,4 +187,4 @@ chmod +x deploy.sh && bash deploy.sh
 
 ## Stargazers over time
 
-[![Stargazers over time](https://starchart.cc/h31105/trojan_v2_docker_onekey.svg)](https://starchart.cc/h31105/trojan_v2_docker_onekey)
+[![Stargazers over time](https://starchart.cc/h31105/deployX.sh.svg)](https://starchart.cc/h31105/deployX.sh)
