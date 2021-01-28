@@ -57,7 +57,7 @@ WARN="${Yellow}[警告]${Font}"
 Error="${Red}[错误]${Font}"
 
 #版本、初始化变量
-shell_version="1.180"
+shell_version="1.181"
 tsp_cfg_version="0.61.1"
 #install_mode="docker"
 upgrade_mode="none"
@@ -166,8 +166,8 @@ chrony_install() {
 }
 
 dependency_install() {
-    ${INS} install curl git lsof unzip
-    judge "安装依赖包 curl git lsof unzip"
+    ${INS} install git lsof unzip
+    judge "安装依赖包 git lsof unzip"
     ${INS} install haveged
     systemctl start haveged && systemctl enable haveged
     command -v bc >/dev/null 2>&1 || ${INS} install bc
@@ -836,6 +836,8 @@ upgrade_tsp() {
 }
 
 update_sh() {
+    command -v curl >/dev/null 2>&1 || ${INS} install curl
+    judge "安装依赖包 curl"
     ol_version=$(curl -L -s https://raw.githubusercontent.com/h31105/trojan_v2_docker_onekey/${github_branch}/deploy.sh | grep "shell_version=" | head -1 | awk -F '=|"' '{print $3}')
     echo "$ol_version" >$version_cmp
     echo "$shell_version" >>$version_cmp
@@ -1060,8 +1062,10 @@ info_links() {
             echo -e " VMess 新版格式：\n vmess://ws+tls:${VMWSID}-0@${TSP_Domain}:${TSP_Port}/?path=$(urlEncode "${v2wspath}")&host=${TSP_Domain}&tlsServerName=${TSP_Domain}#$(urlEncode "${HOSTNAME}-WS")" &&
             echo -e " Shadowrocket 二维码：" &&
             qrencode -t ANSIUTF8 -s 1 -m 2 "vmess://$(echo "auto:${VMWSID}@${TSP_Domain}:${TSP_Port}" | base64 -w 0)?tls=1&mux=1&peer=${TSP_Domain}&allowInsecure=0&tfo=0&remarks=${HOSTNAME}-WS&obfs=websocket&obfsParam=${TSP_Domain}&path=${v2wspath}"
-        [[ $v2ray_tcp_mode = "vless" ]] && echo -e "\n VLESS TCP TLS 分享链接：暂未发布官方规范，请遵照脚本选项 9 中的代理配置信息手动配置客户端。"
-        [[ $v2ray_ws_mode = "vless" ]] && echo -e "\n VLESS WebSocket TLS 分享链接：暂未发布官方规范，请遵照脚本选项 9 中的代理配置信息手动配置客户端。"
+        [[ $v2ray_tcp_mode = "vless" ]] && echo -e "\n VLESS TCP TLS 分享链接：" &&
+            echo -e " VLESS 新版格式：\n vless://${VMTID}@${TSP_Domain}:${TSP_Port}?security=tls&sni=${TSP_Domain}#$(urlEncode "${HOSTNAME}-TCP")"
+        [[ $v2ray_ws_mode = "vless" ]] && echo -e "\n VLESS WebSocket TLS 分享链接：" &&
+            echo -e " VLESS 新版格式：\n vless://${VMTID}@${TSP_Domain}:${TSP_Port}?type=ws&security=tls&host=${TSP_Domain}&path=$(urlEncode "${v2wspath}")&sni=${TSP_Domain}#$(urlEncode "${HOSTNAME}-WS")"
         read -t 60 -n 1 -s -rp "按任意键继续（60s）..."
     fi
 
@@ -1074,7 +1078,7 @@ Disallow: /
 EOF
         subscribe_file="$(head -n 10 /dev/urandom | md5sum | head -c ${random_num})"
         subscribe_links | base64 -w 0 >"$(grep '#Website' ${tsp_conf} | sed -r 's/.*: (.*) #.*/\1/')"/subscribe"${subscribe_file}"
-        echo -e "订阅链接：\n https://${TSP_Domain}/subscribe${subscribe_file} \n${Yellow}请注意：脚本生成的订阅链接包含当前服务端部署的所有协议（VLESS 除外）代理配置信息，出于信息安全考虑，链接地址会在每次查看时随机刷新！\n另外，由于不同客户端对代理协议的兼容支持程度各不相同，请根据实际情况自行调整！${Font}"
+        echo -e "订阅链接：\n https://${TSP_Domain}/subscribe${subscribe_file} \n${Yellow}请注意：脚本生成的订阅链接包含当前服务端部署的所有代理协议配置信息，出于信息安全考虑，链接地址会在每次查看时随机刷新！\n另外，由于不同客户端对代理协议的兼容支持程度各不相同，请根据实际情况自行调整！${Font}"
         read -t 60 -n 1 -s -rp "按任意键继续（60s）..."
     fi
 
@@ -1098,6 +1102,10 @@ subscribe_links() {
         [[ $v2ray_ws_mode = "vmess" ]] &&
             echo -e "vmess://$(echo "{\"add\":\"${TSP_Domain}\",\"aid\":\"0\",\"host\":\"${TSP_Domain}\",\"peer\":\"${TSP_Domain}\",\"id\":\"${VMWSID}\",\"net\":\"ws\",\"path\":\"${v2wspath}\",\"port\":\"${TSP_Port}\",\"ps\":\"${HOSTNAME}-WS\",\"tls\":\"tls\",\"type\":\"none\",\"v\":\"2\"}" | base64 -w 0)" &&
             echo -e "vmess://ws+tls:${VMWSID}-0@${TSP_Domain}:${TSP_Port}/?path=$(urlEncode "${v2wspath}")&host=${TSP_Domain}&tlsServerName=${TSP_Domain}#$(urlEncode "${HOSTNAME}-新版格式-WS")"
+        [[ $v2ray_tcp_mode = "vless" ]] &&
+            echo -e "vless://${VMTID}@${TSP_Domain}:${TSP_Port}?security=tls&sni=${TSP_Domain}#$(urlEncode "${HOSTNAME}-TCP")"
+        [[ $v2ray_ws_mode = "vless" ]] &&
+            echo -e "vless://${VMTID}@${TSP_Domain}:${TSP_Port}?type=ws&security=tls&host=${TSP_Domain}&path=$(urlEncode "${v2wspath}")&sni=${TSP_Domain}#$(urlEncode "${HOSTNAME}-WS")"
     fi
 }
 
