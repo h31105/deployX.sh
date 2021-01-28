@@ -1063,9 +1063,9 @@ info_links() {
             echo -e " Shadowrocket 二维码：" &&
             qrencode -t ANSIUTF8 -s 1 -m 2 "vmess://$(echo "auto:${VMWSID}@${TSP_Domain}:${TSP_Port}" | base64 -w 0)?tls=1&mux=1&peer=${TSP_Domain}&allowInsecure=0&tfo=0&remarks=${HOSTNAME}-WS&obfs=websocket&obfsParam=${TSP_Domain}&path=${v2wspath}"
         [[ $v2ray_tcp_mode = "vless" ]] && echo -e "\n VLESS TCP TLS 分享链接：" &&
-            echo -e " VLESS 新版格式：\n vless://${VMTID}@${TSP_Domain}:${TSP_Port}?security=tls&sni=${TSP_Domain}#$(urlEncode "${HOSTNAME}-TCP")"
+            echo -e " VLESS 新版格式：\n vless://${VLTID}@${TSP_Domain}:${TSP_Port}?security=tls&sni=${TSP_Domain}#$(urlEncode "${HOSTNAME}-TCP")"
         [[ $v2ray_ws_mode = "vless" ]] && echo -e "\n VLESS WebSocket TLS 分享链接：" &&
-            echo -e " VLESS 新版格式：\n vless://${VMTID}@${TSP_Domain}:${TSP_Port}?type=ws&security=tls&host=${TSP_Domain}&path=$(urlEncode "${v2wspath}")&sni=${TSP_Domain}#$(urlEncode "${HOSTNAME}-WS")"
+            echo -e " VLESS 新版格式：\n vless://${VLWSID}@${TSP_Domain}:${TSP_Port}?type=ws&security=tls&host=${TSP_Domain}&path=$(urlEncode "${v2wspath}")&sni=${TSP_Domain}#$(urlEncode "${HOSTNAME}-WS")"
         read -t 60 -n 1 -s -rp "按任意键继续（60s）..."
     fi
 
@@ -1103,9 +1103,9 @@ subscribe_links() {
             echo -e "vmess://$(echo "{\"add\":\"${TSP_Domain}\",\"aid\":\"0\",\"host\":\"${TSP_Domain}\",\"peer\":\"${TSP_Domain}\",\"id\":\"${VMWSID}\",\"net\":\"ws\",\"path\":\"${v2wspath}\",\"port\":\"${TSP_Port}\",\"ps\":\"${HOSTNAME}-WS\",\"tls\":\"tls\",\"type\":\"none\",\"v\":\"2\"}" | base64 -w 0)" &&
             echo -e "vmess://ws+tls:${VMWSID}-0@${TSP_Domain}:${TSP_Port}/?path=$(urlEncode "${v2wspath}")&host=${TSP_Domain}&tlsServerName=${TSP_Domain}#$(urlEncode "${HOSTNAME}-新版格式-WS")"
         [[ $v2ray_tcp_mode = "vless" ]] &&
-            echo -e "vless://${VMTID}@${TSP_Domain}:${TSP_Port}?security=tls&sni=${TSP_Domain}#$(urlEncode "${HOSTNAME}-TCP")"
+            echo -e "vless://${VLTID}@${TSP_Domain}:${TSP_Port}?security=tls&sni=${TSP_Domain}#$(urlEncode "${HOSTNAME}-TCP")"
         [[ $v2ray_ws_mode = "vless" ]] &&
-            echo -e "vless://${VMTID}@${TSP_Domain}:${TSP_Port}?type=ws&security=tls&host=${TSP_Domain}&path=$(urlEncode "${v2wspath}")&sni=${TSP_Domain}#$(urlEncode "${HOSTNAME}-WS")"
+            echo -e "vless://${VLWSID}@${TSP_Domain}:${TSP_Port}?type=ws&security=tls&host=${TSP_Domain}&path=$(urlEncode "${v2wspath}")&sni=${TSP_Domain}#$(urlEncode "${HOSTNAME}-WS")"
     fi
 }
 
