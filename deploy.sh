@@ -104,10 +104,6 @@ check_system() {
     fi
 
     $INS install dbus
-    systemctl stop firewalld
-    echo -e "${OK} ${GreenBG} Firewalld 已关闭 ${Font}"
-    systemctl stop ufw
-    echo -e "${OK} ${GreenBG} UFW 已关闭 ${Font}"
 }
 
 is_root() {
@@ -721,6 +717,10 @@ install_portainer() {
 
 install_tls_shunt_proxy() {
     check_system
+    systemctl stop firewalld
+    echo -e "${OK} ${GreenBG} Firewalld 已关闭 ${Font}"
+    systemctl stop ufw
+    echo -e "${OK} ${GreenBG} UFW 已关闭 ${Font}"
     dependency_install
     basic_optimization
     domain_port_check
