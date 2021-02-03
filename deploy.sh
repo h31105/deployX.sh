@@ -57,7 +57,7 @@ WARN="${Yellow}[警告]${Font}"
 Error="${Red}[错误]${Font}"
 
 #版本、初始化变量
-shell_version="1.182"
+shell_version="1.183"
 tsp_cfg_version="0.61.1"
 #install_mode="docker"
 upgrade_mode="none"
@@ -83,27 +83,19 @@ check_system() {
     if [[ "${ID}" == "centos" && ${VERSION_ID} -eq 7 ]]; then
         echo -e "${OK} ${GreenBG} 当前系统为 Centos ${VERSION_ID} ${VERSION} ${Font}"
         INS="yum -y -q"
-        yum install epel-release -y -q
     elif [[ "${ID}" == "centos" && ${VERSION_ID} -ge 8 ]]; then
         echo -e "${OK} ${GreenBG} 当前系统为 Centos ${VERSION_ID} ${VERSION} ${Font}"
         INS="dnf -y"
-        dnf install epel-release -y -q
-        dnf config-manager --set-enabled PowerTools
-        dnf upgrade libseccomp
     elif [[ "${ID}" == "debian" && ${VERSION_ID} -ge 8 ]]; then
         echo -e "${OK} ${GreenBG} 当前系统为 Debian ${VERSION_ID} ${VERSION} ${Font}"
         INS="apt -y -qq"
-        $INS update
     elif [[ "${ID}" == "ubuntu" && $(echo "${VERSION_ID}" | cut -d '.' -f1) -ge 16 ]]; then
         echo -e "${OK} ${GreenBG} 当前系统为 Ubuntu ${VERSION_ID} ${UBUNTU_CODENAME} ${Font}"
         INS="apt -y -qq"
-        $INS update
     else
         echo -e "${Error} ${RedBG} 当前系统为 ${ID} ${VERSION_ID} 不在支持的系统列表内，安装中断 ${Font}"
         exit 1
     fi
-
-    $INS install dbus
 }
 
 is_root() {
@@ -162,6 +154,18 @@ chrony_install() {
 }
 
 dependency_install() {
+    if [[ "${ID}" == "centos" && ${VERSION_ID} -eq 7 ]]; then
+        yum install epel-release -y -q
+    elif [[ "${ID}" == "centos" && ${VERSION_ID} -ge 8 ]]; then
+        dnf install epel-release -y -q
+        dnf config-manager --set-enabled PowerTools
+        dnf upgrade libseccomp
+    elif [[ "${ID}" == "debian" && ${VERSION_ID} -ge 8 ]]; then
+        $INS update
+    elif [[ "${ID}" == "ubuntu" && $(echo "${VERSION_ID}" | cut -d '.' -f1) -ge 16 ]]; then
+        $INS update
+    fi
+    $INS install dbus
     ${INS} install git lsof unzip
     judge "安装依赖包 git lsof unzip"
     ${INS} install haveged
@@ -717,10 +721,8 @@ install_portainer() {
 
 install_tls_shunt_proxy() {
     check_system
-    systemctl stop firewalld
-    echo -e "${OK} ${GreenBG} Firewalld 已关闭 ${Font}"
-    systemctl stop ufw
-    echo -e "${OK} ${GreenBG} UFW 已关闭 ${Font}"
+    systemctl is-active "firewalld" &>/dev/null && systemctl stop firewalld && echo -e "${OK} ${GreenBG} Firewalld 已关闭 ${Font}"
+    systemctl is-active "ufw" &>/dev/null && systemctl stop ufw && echo -e "${OK} ${GreenBG} UFW 已关闭 ${Font}"
     dependency_install
     basic_optimization
     domain_port_check
