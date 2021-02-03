@@ -1298,6 +1298,7 @@ menu() {
 }
 
 clear
+check_system
 is_root
 update_sh
 list "$1"
